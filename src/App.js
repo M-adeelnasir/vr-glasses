@@ -5,6 +5,8 @@ import GlassesCard from "./components/GlassesCard";
 import ImageCard from "./components/ImageCard";
 import CameraFrame from "./components/CameraFrame";
 
+import useWindowSize from "./lib/useWindowSize";
+
 import backgroundImage from "./assets/images/468 1.png";
 import glassesImage from "./assets/images/FR_rayban_justin_noir_bleuMirroir 1.png";
 
@@ -28,10 +30,24 @@ const Header = styled.h1`
 const ScrollContainer = styled.div`
   height: 80vh;
   overflow-y: scroll;
+
+  @media (max-width: 1200px) {
+    height: auto;
+
+    display: flex;
+    flex-direction: row;
+  }
+
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 `;
 
 function App() {
   const [screenshots, setScreenshots] = useState([]);
+
+  const windowSize = useWindowSize();
 
   return (
     <>
@@ -43,9 +59,16 @@ function App() {
               Find your style, <span style={{ color: "red" }}>Try it on!</span>
             </Header>
           </div>
-          <div className="row justify-content mt-2">
-            <div className="col">
-              <ScrollContainer className="row justify-content-end">
+          <div className="row mt-2 row-cols-xl-3 row-cols-1">
+            <div className="row">
+              <ScrollContainer
+                className={windowSize.width >= 1200 ? "row justify-content-end" : ""}
+              >
+                <GlassesCard
+                  name="Ray-Ban JUSTIN - BLACK RUBBER Frame GREEN MIRROR BLUE Lenses"
+                  price="$99"
+                  image={glassesImage}
+                />
                 <GlassesCard
                   name="Ray-Ban JUSTIN - BLACK RUBBER Frame GREEN MIRROR BLUE Lenses"
                   price="$99"
@@ -72,8 +95,8 @@ function App() {
               <CameraFrame setScreenshots={setScreenshots} />
             </div>
             <div className="col">
-              <div className="row justify-content-start">
-                <ScrollContainer className="col" style={{ maxWidth: "250px" }}>
+              <div className="row">
+                <ScrollContainer>
                   {screenshots.map((screenshot, index) => (
                     <ImageCard
                       key={index}

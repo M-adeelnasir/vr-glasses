@@ -66,7 +66,7 @@ export default function CameraFrame({ setScreenshots }) {
     <Frame>
       {ThreeCanvasComponent}
       <BottomOverlay className="container">
-        <div className="row align-items-center" style={{ height: "100%" }}>
+        <div className="row align-items-center">
           <Button className="col">
             <div className="row">
               <MdOpenWith size="25px" />
