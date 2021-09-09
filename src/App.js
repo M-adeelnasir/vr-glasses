@@ -25,6 +25,10 @@ const Header = styled.h1`
   color: #373737;
   text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   text-align: center;
+
+  @media (max-width: 1200px) {
+    font-size: 2em;
+  }
 `;
 
 const ScrollContainer = styled.div`

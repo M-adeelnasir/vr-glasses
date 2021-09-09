@@ -21,6 +21,9 @@ const BottomOverlay = styled.div`
   color: white;
   text-align: center;
   font-size: 14px;
+
+  display: flex;
+  justify-content: space-around;
 `;
 
 const Button = styled.div`
@@ -40,13 +43,11 @@ const CameraButton = styled.div`
 
   cursor: pointer;
 
-  position: absolute;
   width: 100px;
   height: 100px;
   border-radius: 100px;
-  bottom: 50px;
-  left: 50%;
-  transform: translateX(-40%);
+
+  transform: translateY(-50%);
 
   transition: 0.1s ease all;
   &:hover {
@@ -66,7 +67,7 @@ export default function CameraFrame({ setScreenshots }) {
     <Frame>
       {ThreeCanvasComponent}
       <BottomOverlay className="container">
-        <div className="row align-items-center">
+        <div className="row align-items-center w-100">
           <Button className="col">
             <div className="row">
               <MdOpenWith size="25px" />
@@ -75,6 +76,9 @@ export default function CameraFrame({ setScreenshots }) {
               <p>Frame position</p>
             </div>
           </Button>
+          <CameraButton className="row align-items-center" onClick={newScreenshot}>
+            <MdCameraAlt size="50px" color="white" />
+          </CameraButton>
           <Button className="col">
             <div className="row">
               <MdDelete size="25px" />
@@ -85,9 +89,6 @@ export default function CameraFrame({ setScreenshots }) {
           </Button>
         </div>
       </BottomOverlay>
-      <CameraButton className="row align-items-center" onClick={newScreenshot}>
-        <MdCameraAlt size="50px" color="white" />
-      </CameraButton>
     </Frame>
   );
 }
