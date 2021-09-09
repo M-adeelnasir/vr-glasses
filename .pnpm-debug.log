@@ -1,0 +1,22 @@
+{
+  "0 debug pnpm:scope": {
+    "selected": 1
+  },
+  "1 error pnpm": {
+    "code": "ELIFECYCLE",
+    "errno": "ENOENT",
+    "syscall": "spawn",
+    "file": "sh",
+    "pkgid": "rayban-demo@0.1.0",
+    "stage": "start",
+    "script": "react-scripts start",
+    "pkgname": "rayban-demo",
+    "err": {
+      "name": "Error",
+      "message": "rayban-demo@0.1.0 start: `react-scripts start`\nspawn ENOENT",
+      "code": "ELIFECYCLE",
+      "stack": "Error: rayban-demo@0.1.0 start: `react-scripts start`\nspawn ENOENT\n    at ChildProcess.<anonymous> (/usr/local/Cellar/pnpm/6.13.0/libexec/lib/node_modules/pnpm/dist/pnpm.cjs:94305:22)\n    at ChildProcess.emit (node:events:394:28)\n    at maybeClose (node:internal/child_process:1064:16)\n    at Process.ChildProcess._handle.onexit (node:internal/child_process:301:5)"
+    }
+  },
+  "2 warn pnpm:global": " Local package.json exists, but node_modules missing, did you mean to install?"
+}
