@@ -1,0 +1,18 @@
+image: ubuntu:18.04
+stages:
+  - deploy
+
+before_script:
+    - apt update -y
+    - apt install openssh-client putty putty-tools plink -y
+    - echo "cd /var/www/rayban-demo/ && git stash && git pull && chmod -Rf 755 /var/www/rayban-demo/ && chown -Rf drones:drones /var/www/rayban-demo/ && cd /var/www/rayban-demo/ && npm install && npm run build" > commands
+
+    
+production_deploy:
+  stage: deploy
+  script:
+    - echo "$SSH_PASS"
+    - cat commands
+    - echo "y" | plink -l drones -pw $SSH_PASS\$! 34.216.76.250 -m commands "exit"
+  only:
+    - main
