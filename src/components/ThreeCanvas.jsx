@@ -23,7 +23,6 @@ export default function ThreeCanvas() {
     });
 
     const renderer = rendererRef.current;
-    renderer.setClearColor(0xff0000, 1);
 
     canvasRef.current.appendChild(renderer.domElement);
 
@@ -35,6 +34,8 @@ export default function ThreeCanvas() {
       camera.updateProjectionMatrix();
     };
 
+    window.addEventListener("resize", resizeCanvas);
+
     resizeCanvas();
 
     const isVideoPlaying = (vid) =>
@@ -43,7 +44,7 @@ export default function ThreeCanvas() {
     const video = videoRef.current;
 
     // get the webcam video
-    if (!isVideoPlaying(video))
+    if (!isVideoPlaying(video)) {
       navigator.mediaDevices
         .getUserMedia({ video: true, audio: false })
         .then(function (stream) {
@@ -53,7 +54,7 @@ export default function ThreeCanvas() {
         .catch(function (err) {
           console.log("An error occured! " + err);
         });
-
+    }
     const videoTexture = new THREE.VideoTexture(video);
     videoTexture.minFilter = THREE.LinearFilter;
 
@@ -80,7 +81,7 @@ export default function ThreeCanvas() {
   // the div's height is 100% - the bottom overlay height
   const Component = (
     <>
-      <div ref={canvasRef} style={{ width: "100%", height: "calc(100% - 100px)" }} />
+      <div ref={canvasRef} style={{ minHeight: "70vh", height: "calc(100% - 100px)" }} />
       <video ref={videoRef} style={{ display: "none" }} autoPlay playsInline></video>
     </>
   );

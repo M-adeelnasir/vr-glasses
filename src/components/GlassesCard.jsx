@@ -1,11 +1,15 @@
+import { useEffect, useState } from "react";
 import styled from "styled-components";
 
 const Card = styled.div`
   background-color: white;
-  width: 290px;
+  width: 280px;
   font-size: 14px;
-  padding: 5px;
-  margin: 10px 0px;
+  padding: 10px;
+  margin: 10px;
+
+  border-radius: 10px;
+  box-shadow: 0px 0px 2px 2px rgba(0, 0, 0, 0.1);
 
   p,
   h1 {
@@ -14,6 +18,14 @@ const Card = styled.div`
 `;
 
 export default function GlassesCard({ name, price, image }) {
+  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    window.addEventListener("resize", () => {
+      setScreenWidth(window.innerWidth);
+    });
+  }, []);
+
   return (
     <Card className="container">
       <div className="row">
@@ -25,7 +37,7 @@ export default function GlassesCard({ name, price, image }) {
         </div>
       </div>
       <div className="row">
-        <p>{name}</p>
+        <p>{screenWidth < 768 ? name.split(" ")[0] : name}</p>
       </div>
     </Card>
   );

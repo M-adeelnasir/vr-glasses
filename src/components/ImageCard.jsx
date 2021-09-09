@@ -21,14 +21,18 @@ const IconButton = styled.div`
 
 const Container = styled.div`
   position: relative;
-  width: 210px;
+  min-width: 210px;
+  max-width: 210px;
   height: 230px;
   background-image: url("${(props) => props.image}");
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center center;
+  box-shadow: 0px 0px 4px 4px rgba(0, 0, 0, 0.1);
 
-  margin: 10px 0px;
+  border-radius: 10px;
+
+  margin: 10px;
 `;
 
 export default function ImageCard({ image, deleteScreenshot }) {
