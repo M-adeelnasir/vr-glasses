@@ -1,5 +1,8 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+
+import testModel from "../assets/models/ray glasses test 13 gold.glb";
 
 export default function ThreeCanvas() {
   const canvasRef = useRef(null);
@@ -20,6 +23,7 @@ export default function ThreeCanvas() {
     camera.position.set(0, -0.0, 1.3);
     rendererRef.current = new THREE.WebGLRenderer({
       preserveDrawingBuffer: true,
+      antialias: true,
     });
 
     const renderer = rendererRef.current;
@@ -58,11 +62,35 @@ export default function ThreeCanvas() {
     const videoTexture = new THREE.VideoTexture(video);
     videoTexture.minFilter = THREE.LinearFilter;
 
+    // show webcam
     const geometry = new THREE.PlaneGeometry(2, 2);
-    const material = new THREE.MeshBasicMaterial({ map: videoTexture, side: THREE.DoubleSide });
+    const material = new THREE.MeshBasicMaterial({
+      map: videoTexture,
+      side: THREE.DoubleSide,
+    });
     const plane = new THREE.Mesh(geometry, material);
     plane.scale.set(-1, 1, 1);
     scene.add(plane);
+
+    // environment
+    const light = new THREE.AmbientLight(0xffffff);
+    scene.add(light);
+
+    // load model
+    const loader = new GLTFLoader();
+    loader.load(
+      testModel,
+      (obj) => {
+        obj.scene.scale.setScalar(10);
+        scene.add(obj.scene);
+      },
+      null,
+      (err) => {
+        if (err) {
+          console.log(err);
+        }
+      }
+    );
 
     const animate = () => {
       requestAnimationFrame(animate);
