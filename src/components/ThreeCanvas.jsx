@@ -1,26 +1,71 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
-import testModel from "../assets/models/ray glasses test 13 gold.glb";
+import ModelStore from "../stores/ModelStore";
 
 export default function ThreeCanvas() {
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
-
   const rendererRef = useRef(null);
+  const sceneRef = useRef(null);
+  const currentModelRef = useRef(null);
+
+  const [models, setModels] = useState(null);
+
+  const modelPaths = ModelStore.useState((state) => state.pairs).map((pair) => pair.model);
+  const currentModelIndex = ModelStore.useState((state) => state.currentModelIndex);
+
+  // load all the models first
+  useEffect(() => {
+    // load models
+    const loader = new GLTFLoader();
+
+    const newModels = [];
+
+    modelPaths.forEach((modelPath) => {
+      loader.load(
+        modelPath,
+        (model) => {
+          model.scene.pathName = modelPath;
+          newModels.push(model.scene);
+        },
+        null,
+        (err) => {
+          if (err) {
+            console.log(err);
+          }
+        }
+      );
+    });
+
+    setModels(newModels);
+  }, []);
+
+  // check if the current model has changed
+  useEffect(() => {
+    if (currentModelIndex !== null) {
+      // if yes, remove the last model from the scene
+      if (currentModelRef.current) {
+        sceneRef.current.remove(currentModelRef.current);
+      }
+
+      // and add a new one
+      const model = models[currentModelIndex];
+      model.scale.setScalar(10);
+      // model.rotation.y = -Math.PI / 4;
+      currentModelRef.current = model;
+      sceneRef.current.add(model);
+    }
+  }, [currentModelIndex]);
 
   useEffect(() => {
     if (!videoRef || !canvasRef) {
       return;
     }
-
     // first, we clear the previous scene
     canvasRef.current.innerHTML = "";
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-    camera.position.set(0, -0.0, 1.3);
     rendererRef.current = new THREE.WebGLRenderer({
       preserveDrawingBuffer: true,
       antialias: true,
@@ -28,6 +73,16 @@ export default function ThreeCanvas() {
 
     const renderer = rendererRef.current;
 
+    renderer.physicallyCorrectLights = true;
+    // renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.setClearColor(0x000000);
+    renderer.setPixelRatio(window.devicePixelRatio);
+
+    sceneRef.current = new THREE.Scene();
+    const scene = sceneRef.current;
+
+    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+    camera.position.set(0, -0.0, 1.3);
     canvasRef.current.appendChild(renderer.domElement);
 
     const resizeCanvas = () => {
@@ -39,7 +94,6 @@ export default function ThreeCanvas() {
     };
 
     window.addEventListener("resize", resizeCanvas);
-
     resizeCanvas();
 
     const isVideoPlaying = (vid) =>
@@ -59,6 +113,7 @@ export default function ThreeCanvas() {
           console.log("An error occured! " + err);
         });
     }
+
     const videoTexture = new THREE.VideoTexture(video);
     videoTexture.minFilter = THREE.LinearFilter;
 
@@ -73,24 +128,8 @@ export default function ThreeCanvas() {
     scene.add(plane);
 
     // environment
-    const light = new THREE.AmbientLight(0xffffff);
+    const light = new THREE.HemisphereLight(0xffffff, 0xffffbb, 1);
     scene.add(light);
-
-    // load model
-    const loader = new GLTFLoader();
-    loader.load(
-      testModel,
-      (obj) => {
-        obj.scene.scale.setScalar(10);
-        scene.add(obj.scene);
-      },
-      null,
-      (err) => {
-        if (err) {
-          console.log(err);
-        }
-      }
-    );
 
     const animate = () => {
       requestAnimationFrame(animate);

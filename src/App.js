@@ -5,10 +5,11 @@ import GlassesCard from "./components/GlassesCard";
 import ImageCard from "./components/ImageCard";
 import CameraFrame from "./components/CameraFrame";
 
+import ModelStore from "./stores/ModelStore";
+
 import useWindowSize from "./lib/useWindowSize";
 
 import backgroundImage from "./assets/images/468 1.png";
-import glassesImage from "./assets/images/FR_rayban_justin_noir_bleuMirroir 1.png";
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -48,8 +49,31 @@ const ScrollContainer = styled.div`
   }
 `;
 
+function loadModelsAndPreviews() {
+  function importAll(r) {
+    return r.keys().map(r);
+  }
+
+  const previews = importAll(require.context("./assets/previews/", false, /\.(png)$/));
+  const models = importAll(require.context("./assets/models/", false, /\.(glb)$/));
+
+  ModelStore.update((state) => {
+    state.pairs = previews.map((img, index) => {
+      return {
+        preview: img.default,
+        model: models[index].default,
+      };
+    });
+  });
+}
+
 function App() {
+  loadModelsAndPreviews();
+
   const [screenshots, setScreenshots] = useState([]);
+
+  const glassesPreviews = ModelStore.useState((state) => state.pairs).map((pair) => pair.preview);
+  const currentModelIndex = ModelStore.useState((state) => state.currentModelIndex);
 
   const windowSize = useWindowSize();
 
@@ -68,31 +92,20 @@ function App() {
               <ScrollContainer
                 className={windowSize.width >= 1200 ? "row justify-content-end" : ""}
               >
-                <GlassesCard
-                  name="Ray-Ban JUSTIN - BLACK RUBBER Frame GREEN MIRROR BLUE Lenses"
-                  price="$99"
-                  image={glassesImage}
-                />
-                <GlassesCard
-                  name="Ray-Ban JUSTIN - BLACK RUBBER Frame GREEN MIRROR BLUE Lenses"
-                  price="$99"
-                  image={glassesImage}
-                />
-                <GlassesCard
-                  name="Ray-Ban JUSTIN - BLACK RUBBER Frame GREEN MIRROR BLUE Lenses"
-                  price="$99"
-                  image={glassesImage}
-                />
-                <GlassesCard
-                  name="Ray-Ban JUSTIN - BLACK RUBBER Frame GREEN MIRROR BLUE Lenses"
-                  price="$99"
-                  image={glassesImage}
-                />
-                <GlassesCard
-                  name="Ray-Ban JUSTIN - BLACK RUBBER Frame GREEN MIRROR BLUE Lenses"
-                  price="$99"
-                  image={glassesImage}
-                />
+                {glassesPreviews.map((img, index) => (
+                  <GlassesCard
+                    key={index}
+                    image={img}
+                    name="Ray-ban"
+                    price="$99"
+                    style={currentModelIndex === index ? { border: "1px solid blue" } : null}
+                    onClick={() => {
+                      ModelStore.update((state) => {
+                        state.currentModelIndex = index;
+                      });
+                    }}
+                  />
+                ))}
               </ScrollContainer>
             </div>
             <div className="col">

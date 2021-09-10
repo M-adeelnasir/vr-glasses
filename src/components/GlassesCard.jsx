@@ -21,11 +21,11 @@ const Card = styled.div`
   }
 `;
 
-export default function GlassesCard({ name, price, image }) {
+export default function GlassesCard({ name, price, image, ...props }) {
   const windowSize = useWindowSize();
 
   return (
-    <Card className="container">
+    <Card {...props}>
       <div className="row">
         <div className="col">
           <img style={{ width: "auto", height: "105px" }} src={image} alt={name} />

@@ -1,5 +1,6 @@
 import styled from "styled-components";
 import { MdDelete, MdShare } from "react-icons/md";
+import { useState } from "react";
 
 const IconButton = styled.div`
   width: 35px;
@@ -36,17 +37,25 @@ const Container = styled.div`
 `;
 
 export default function ImageCard({ image, deleteScreenshot }) {
+  const [hovered, setHovered] = useState(false);
+
   return (
-    <Container image={image}>
-      <IconButton
-        style={{ position: "absolute", top: 10, right: 10 }}
-        onClick={() => deleteScreenshot()}
-      >
-        <MdDelete size="20px" />
-      </IconButton>
-      <IconButton style={{ position: "absolute", bottom: 10, right: 10 }}>
-        <MdShare size="20px" />
-      </IconButton>
+    <Container
+      image={image}
+      onMouseOver={() => setHovered(true)}
+      onMouseOut={() => setHovered(false)}
+    >
+      <div style={{ opacity: hovered ? 1 : 0, transition: "0.1s ease all" }}>
+        <IconButton
+          style={{ position: "absolute", top: 10, right: 10 }}
+          onClick={() => deleteScreenshot()}
+        >
+          <MdDelete size="20px" />
+        </IconButton>
+        <IconButton style={{ position: "absolute", bottom: 10, right: 10 }}>
+          <MdShare size="20px" />
+        </IconButton>
+      </div>
     </Container>
   );
 }
