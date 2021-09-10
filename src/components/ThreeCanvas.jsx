@@ -20,6 +20,7 @@ export default function ThreeCanvas() {
   useEffect(() => {
     // load models
     const loader = new GLTFLoader();
+
     const newModels = [];
 
     modelPaths.forEach((modelPath) => {
@@ -48,9 +49,11 @@ export default function ThreeCanvas() {
       if (currentModelRef.current) {
         sceneRef.current.remove(currentModelRef.current);
       }
+
       // and add a new one
       const model = models[currentModelIndex];
       model.scale.setScalar(10);
+      // model.rotation.y = -Math.PI / 4;
       currentModelRef.current = model;
       sceneRef.current.add(model);
     }
@@ -91,7 +94,6 @@ export default function ThreeCanvas() {
     };
 
     window.addEventListener("resize", resizeCanvas);
-
     resizeCanvas();
 
     const isVideoPlaying = (vid) =>
@@ -126,7 +128,7 @@ export default function ThreeCanvas() {
     scene.add(plane);
 
     // environment
-    const light = new THREE.AmbientLight(0xffffff);
+    const light = new THREE.HemisphereLight(0xffffff, 0xffffbb, 1);
     scene.add(light);
 
     const animate = () => {

@@ -5,10 +5,11 @@ import GlassesCard from "./components/GlassesCard";
 import ImageCard from "./components/ImageCard";
 import CameraFrame from "./components/CameraFrame";
 
+import ModelStore from "./stores/ModelStore";
+
 import useWindowSize from "./lib/useWindowSize";
 
 import backgroundImage from "./assets/images/468 1.png";
-import ModelStore from "./stores/ModelStore";
 
 const GlobalStyle = createGlobalStyle`
   body {
