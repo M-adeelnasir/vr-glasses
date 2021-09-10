@@ -52,7 +52,8 @@ export default function ThreeCanvas() {
 
       // and add a new one
       const model = models[currentModelIndex];
-      model.scale.setScalar(10);
+      console.log(model);
+      model.scale.setScalar(8);
       // model.rotation.y = -Math.PI / 4;
       currentModelRef.current = model;
       sceneRef.current.add(model);
@@ -74,7 +75,7 @@ export default function ThreeCanvas() {
     const renderer = rendererRef.current;
 
     renderer.physicallyCorrectLights = true;
-    // renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.setClearColor(0x000000);
     renderer.setPixelRatio(window.devicePixelRatio);
 
@@ -129,7 +130,10 @@ export default function ThreeCanvas() {
 
     // environment
     const light = new THREE.HemisphereLight(0xffffff, 0xffffbb, 1);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.z = 1;
     scene.add(light);
+    scene.add(directionalLight);
 
     const animate = () => {
       requestAnimationFrame(animate);

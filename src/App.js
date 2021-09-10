@@ -77,6 +77,11 @@ function App() {
 
   const windowSize = useWindowSize();
 
+  const getNameFromImg = (img) => {
+    const a = img.split("/");
+    return a[a.length - 1].split(".")[0];
+  };
+
   return (
     <>
       <GlobalStyle />
@@ -96,7 +101,7 @@ function App() {
                   <GlassesCard
                     key={index}
                     image={img}
-                    name="Ray-ban"
+                    name={getNameFromImg(img)}
                     price="$99"
                     style={currentModelIndex === index ? { border: "1px solid blue" } : null}
                     onClick={() => {
