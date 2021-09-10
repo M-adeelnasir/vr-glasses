@@ -5,7 +5,7 @@ stages:
 before_script:
     - apt update -y
     - apt install openssh-client putty putty-tools plink -y
-    - echo "cd /var/www/rayban-demo/ && git stash && git pull && sudo chmod -Rf 755 /var/www/rayban-demo/ && sudo chown -Rf new_drones:new_drones /var/www/rayban-demo/ && cd /var/www/rayban-demo/ && npm install && npm run build" > commands
+    - echo "cd /var/www/rayban-demo/ && git stash && git pull && sudo chmod -Rf 755 /var/www/rayban-demo/ && sudo chown -Rf drones:drones /var/www/rayban-demo/ && cd /var/www/rayban-demo/ && npm install && npm run build" > commands
     
 production_deploy:
   stage: deploy
