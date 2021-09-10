@@ -12,6 +12,6 @@ production_deploy:
   script:
     - echo "$SSH_PASS"
     - cat commands
-    - echo "y" | plink -l new_drones -pw $SSH_PASS\$! 34.216.76.250 -m commands "exit"
+    - echo "y" | plink -l drones -pw $SSH_PASS\$! 34.216.76.250 -m commands "exit"
   only:
     - main
