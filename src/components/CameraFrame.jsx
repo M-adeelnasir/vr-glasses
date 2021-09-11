@@ -3,12 +3,14 @@ import { MdOpenWith, MdDelete, MdCameraAlt } from "react-icons/md";
 import ThreeCanvas from "./ThreeCanvas";
 
 const Frame = styled.div`
-  background: #eaeaea;
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   width: 100%;
+  max-width: 560px;
   height: 100%;
-  border: 10px solid white;
+  border: 5px solid white;
   position: relative;
+  border-radius: 15px;
+  margin-left: auto;
+  margin-right: auto;
 `;
 
 const BottomOverlay = styled.div`
@@ -24,6 +26,8 @@ const BottomOverlay = styled.div`
 
   display: flex;
   justify-content: space-around;
+  border-bottom-right-radius: 10px;
+  border-bottom-left-radius: 10px;
 `;
 
 const Button = styled.div`
@@ -64,7 +68,7 @@ export default function CameraFrame({ setScreenshots }) {
   };
 
   return (
-    <Frame>
+    <Frame className="shadow-sm">
       {ThreeCanvasComponent}
       <BottomOverlay className="container">
         <div className="row align-items-center w-100">

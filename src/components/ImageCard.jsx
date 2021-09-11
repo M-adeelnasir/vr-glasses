@@ -29,11 +29,15 @@ const Container = styled.div`
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center center;
-  box-shadow: 0px 0px 4px 4px rgba(0, 0, 0, 0.1);
 
   border-radius: 10px;
 
-  margin: 10px;
+  margin-bottom: 10px;
+
+  @media (max-width: 1200px) {
+    margin-top: 10px;
+    margin-right: 10px;
+  }
 `;
 
 export default function ImageCard({ image, deleteScreenshot }) {
@@ -41,6 +45,7 @@ export default function ImageCard({ image, deleteScreenshot }) {
 
   return (
     <Container
+      className="shadow-sm"
       image={image}
       onMouseOver={() => setHovered(true)}
       onMouseOut={() => setHovered(false)}

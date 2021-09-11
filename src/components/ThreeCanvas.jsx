@@ -52,7 +52,6 @@ export default function ThreeCanvas() {
 
       // and add a new one
       const model = models[currentModelIndex];
-      console.log(model);
       model.scale.setScalar(8);
       // model.rotation.y = -Math.PI / 4;
       currentModelRef.current = model;
