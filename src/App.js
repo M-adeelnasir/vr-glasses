@@ -18,6 +18,10 @@ const GlobalStyle = createGlobalStyle`
     background-size: cover;
     height: 100%;
   }
+
+  canvas {
+    border-radius: 10px;
+  }
 `;
 
 const Header = styled.h1`
@@ -33,8 +37,8 @@ const Header = styled.h1`
 `;
 
 const ScrollContainer = styled.div`
-  height: 80vh;
-  overflow-y: scroll;
+  max-height: 80vh;
+  overflow: scroll;
 
   @media (max-width: 1200px) {
     height: auto;
@@ -113,7 +117,7 @@ function App() {
                 ))}
               </ScrollContainer>
             </div>
-            <div className="col">
+            <div className="col" style={{ minHeight: "80vh" }}>
               <CameraFrame setScreenshots={setScreenshots} />
             </div>
             <div className="col">

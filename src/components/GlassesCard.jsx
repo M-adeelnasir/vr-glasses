@@ -1,42 +1,49 @@
 import styled from "styled-components";
 import useWindowSize from "../lib/useWindowSize";
 
-const Card = styled.div`
-  background-color: white;
-  width: 280px;
-  height: 200px;
-  font-size: 14px;
-  padding: 2px 10px;
-  margin: 10px;
-
+const Container = styled.div`
   border-radius: 10px;
-  box-shadow: 0px 0px 2px 2px rgba(0, 0, 0, 0.1);
-  p,
-  h1 {
-    margin: 0;
-  }
-
-  h1 {
-    font-size: 2em;
+  max-width: 280px;
+  min-width: 200px;
+  margin-bottom: 10px;
+  margin-right: 10px;
+  @media (min-width: 1201px) {
+    margin-right: -10px;
+    margin-bottom: 10px;
   }
 `;
 
-export default function GlassesCard({ name, price, image, ...props }) {
-  const windowSize = useWindowSize();
+const PriceText = styled.p`
+  font-weight: bold;
+  font-size: 1.8em;
+  text-align: right;
+  padding: 0px;
+  margin: 0px;
+`;
+
+export default function GlassesCard({ image, name, price, ...props }) {
+  const windowWidth = useWindowSize().width;
 
   return (
-    <Card {...props}>
-      <div className="row" style={{ height: "80%" }}>
+    <Container
+      className="container shadow-sm d-flex flex-column justify-content-center p-2"
+      {...props}
+    >
+      <div className="row">
         <div className="col-8">
-          <img className="img-fluid mx-auto" style={{ marginTop: "15%" }} src={image} alt={name} />
+          <img src={image} className="img-fluid" />
         </div>
-        <div className="col align-self-center">
-          <h1 style={{ fontWeight: "bold", textAlign: "right" }}>{price}</h1>
+        <div className="col">
+          <div className="h-100 d-flex justify-content-end">
+            <PriceText style={{}} className="align-self-center">
+              {price}
+            </PriceText>
+          </div>
         </div>
       </div>
       <div className="row text-center">
-        <p>{windowSize.width <= 1200 ? name.split(" ")[0] : name}</p>
+        <p className="mt-4">{windowWidth <= 1200 ? name.split(" ")[0] : name}</p>
       </div>
-    </Card>
+    </Container>
   );
 }
