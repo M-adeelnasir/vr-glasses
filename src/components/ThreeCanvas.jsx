@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
+import * as facemesh from "@tensorflow-models/face-landmarks-detection";
+import * as tf from "@tensorflow/tfjs";
+import { drawMesh } from "../lib/facemesh-utilities";
+
 import ModelStore from "../stores/ModelStore";
+
+const isVideoPlaying = (vid) =>
+  !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
 
 export default function ThreeCanvas() {
   const canvasRef = useRef(null);
@@ -140,6 +147,30 @@ export default function ThreeCanvas() {
     };
 
     animate();
+  }, []);
+
+  // ai model
+
+  const runFacemesh = async () => {
+    const net = await facemesh.load(facemesh.SupportedPackages.mediapipeFacemesh, {
+      detectorModelUrl: "./models/1/model.json",
+      modelUrl: "./models/2/model.json",
+      irisModelUrl: "./models/3/model.json",
+    });
+
+    setInterval(() => detect(net), 2);
+  };
+
+  const detect = async (net) => {
+    if (!isVideoPlaying(videoRef.current)) {
+      return;
+    }
+
+    const face = await net.estimateFaces({ input: videoRef.current });
+  };
+
+  useEffect(() => {
+    runFacemesh();
   }, []);
 
   const saveScreenshot = () => {
