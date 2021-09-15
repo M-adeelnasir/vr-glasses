@@ -196,6 +196,8 @@ export default function ThreeCanvas() {
 
       currentModelRef.current.position.x = points[2].x;
       currentModelRef.current.position.y = points[2].y;
+
+      // TODO: glasses size and rotation
     }
   };
 
