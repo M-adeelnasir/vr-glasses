@@ -196,8 +196,6 @@ export default function ThreeCanvas() {
 
       currentModelRef.current.position.x = points[2].x;
       currentModelRef.current.position.y = points[2].y;
-
-      // TODO: calculate rotation and glasses size based on face rotation and distance from the camera
     }
   };
 
