@@ -4,9 +4,9 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 import * as facemesh from "@tensorflow-models/face-landmarks-detection";
 import * as tf from "@tensorflow/tfjs";
-import { drawMesh } from "../lib/facemesh-utilities";
 
 import ModelStore from "../stores/ModelStore";
+import getFaceMeshCoords from "../lib/getFaceMeshCoords";
 
 const isVideoPlaying = (vid) =>
   !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
@@ -17,6 +17,8 @@ export default function ThreeCanvas() {
   const rendererRef = useRef(null);
   const sceneRef = useRef(null);
   const currentModelRef = useRef(null);
+
+  const pointRef = useRef(null);
 
   const [models, setModels] = useState(null);
 
@@ -81,7 +83,7 @@ export default function ThreeCanvas() {
     const renderer = rendererRef.current;
 
     renderer.physicallyCorrectLights = true;
-    renderer.outputEncoding = THREE.sRGBEncoding;
+    // renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.setClearColor(0x000000);
     renderer.setPixelRatio(window.devicePixelRatio);
 
@@ -122,16 +124,23 @@ export default function ThreeCanvas() {
     }
 
     const videoTexture = new THREE.VideoTexture(video);
-    videoTexture.minFilter = THREE.LinearFilter;
+
+    // flip the video
+    // videoTexture.wrapS = THREE.RepeatWrapping;
+    // videoTexture.repeat.x = -1;
 
     // show webcam
+
+    // scene.background = videoTexture;
+
     const geometry = new THREE.PlaneGeometry(2, 2);
     const material = new THREE.MeshBasicMaterial({
-      map: videoTexture,
-      side: THREE.DoubleSide,
+    map: videoTexture,
+    side: THREE.DoubleSide,
     });
     const plane = new THREE.Mesh(geometry, material);
-    plane.scale.set(-1, 1, 1);
+    plane.position.z = -1;
+    plane.scale.set(2, 2, 1);
     scene.add(plane);
 
     // environment
@@ -158,7 +167,7 @@ export default function ThreeCanvas() {
       irisModelUrl: "./models/3/model.json",
     });
 
-    setInterval(() => detect(net), 2);
+    detect(net);
   };
 
   const detect = async (net) => {
@@ -166,7 +175,30 @@ export default function ThreeCanvas() {
       return;
     }
 
+    requestAnimationFrame(() => detect(net));
+
+    // run the ai model
     const face = await net.estimateFaces({ input: videoRef.current });
+
+    // get required points from the result
+    const points = getFaceMeshCoords(face);
+    if (currentModelRef.current !== null && points.length > 0) {
+      // flip
+      // points[0].x -= videoRef.current.videoWidth / 2;
+
+      // the three js center is in the middle of the screen so we have to substract half of the video width and height from the facemesh points to center the coordinates
+      points[2].x -= videoRef.current.videoWidth / 2;
+      points[2].y -= videoRef.current.videoHeight / 2;
+
+      // normalize the points
+      points[2].x /= videoRef.current.videoWidth;
+      points[2].y /= -videoRef.current.videoHeight;
+
+      currentModelRef.current.position.x = points[2].x;
+      currentModelRef.current.position.y = points[2].y;
+
+      // TODO: calculate rotation and glasses size based on face rotation and distance from the camera
+    }
   };
 
   useEffect(() => {
