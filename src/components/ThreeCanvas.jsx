@@ -71,7 +71,7 @@ export default function ThreeCanvas() {
     }
   }, [currentModelIndex]);
 
-  useEffect(() => {
+  useEffect(async () => {
     if (!videoRef || !canvasRef) {
       return;
     }
@@ -147,9 +147,7 @@ export default function ThreeCanvas() {
     // const plane = new THREE.Mesh(geometry, material);
     // plane.position.z = -2;
     // const ratio = VIDEO_WIDTH / VIDEO_HEIGHT;
-    // const multiplier = 2;
-    // const size = ratio * multiplier;
-    // plane.scale.set(size, size, 1);
+    // plane.scale.set(1 * ratio, 1, 1);
     // scene.add(plane);
 
     // environment
@@ -165,89 +163,88 @@ export default function ThreeCanvas() {
     const dot = new THREE.Points(dotGeometry, dotMaterial);
     scene.add(dot);
 
+    const aiModel = await facemesh.load(facemesh.SupportedPackages.mediapipeFacemesh, {
+      detectorModelUrl: "./models/1/model.json",
+      modelUrl: "./models/2/model.json",
+      irisModelUrl: "./models/3/model.json",
+    });
+
+    const convertPoint = (point) => {
+      const newPoint = { ...point };
+
+      const w = renderer.domElement.clientWidth;
+      const h = renderer.domElement.clientHeight;
+
+      // the three js center is in the middle of the screen so we have to substract
+      // half of the video width and height from the facemesh points to center the coordinates
+      newPoint.x -= w;
+      newPoint.y -= h;
+
+      // normalize the points
+      newPoint.x /= w;
+      newPoint.y /= -h;
+
+      return newPoint;
+    };
+
+    // const mapVal = (value, start1, stop1, start2, stop2) =>
+    //   start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
+
+    const detect = async (net) => {
+      if (!isVideoPlaying(videoRef.current)) {
+        return;
+      }
+
+      // run the ai model
+      const face = await net.estimateFaces({ input: renderer.domElement });
+      // get required points from the result
+      const points = getFaceMeshCoords(face);
+      if (currentModelRef.current !== null && points.length > 0) {
+        // flip
+        // points[0].x -= videoRef.current.videoWidth / 2;
+
+        const leftEye = convertPoint(points[0]);
+        const rightEye = convertPoint(points[1]);
+
+        const centerX = leftEye.x + (rightEye.x - leftEye.x) / 2;
+        const centerY = leftEye.y + (rightEye.y - leftEye.y) / 2;
+
+        const center = convertPoint(points[2]);
+
+        const box = new THREE.Box3().setFromObject(currentModelRef.current);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+
+        currentModelRef.current.position.x = center.x;
+        currentModelRef.current.position.y = center.y;
+        // console.log(center.z);
+      }
+    };
+
     const animate = () => {
       requestAnimationFrame(animate);
+
+      if (aiModel && currentModelRef.current) {
+        // hide the model when detecting the face so it doesn't interfere
+        currentModelRef.current.visible = false;
+        dot.visible = false;
+
+        // I think I need to render the scene twice, once with the face and once with the models, this way I can detect the faces from the canvas without the model interfering
+        renderer.render(scene, camera);
+        detect(aiModel);
+
+        currentModelRef.current.visible = true;
+        dot.visible = true;
+      }
 
       if (currentModelRef.current !== null) {
         dot.position.x = currentModelRef.current.position.x;
         dot.position.y = currentModelRef.current.position.y;
       }
-
       renderer.render(scene, camera);
     };
 
     animate();
-  }, []);
-
-  // ai model
-
-  const runFacemesh = async () => {
-    facemesh
-      .load(facemesh.SupportedPackages.mediapipeFacemesh, {
-        detectorModelUrl: "./models/1/model.json",
-        modelUrl: "./models/2/model.json",
-        irisModelUrl: "./models/3/model.json",
-      })
-      .then((net) => {
-        detect(net);
-      });
-  };
-
-  const detect = async (net) => {
-    requestAnimationFrame(() => detect(net));
-
-    if (!isVideoPlaying(videoRef.current)) {
-      return;
-    }
-
-    // run the ai model
-    // TODO: maybe pass the three js canvas as input
-    const face = await net.estimateFaces({ input: videoRef.current });
-
-    const convertPoint = (point) => {
-      const newPoint = { ...point };
-
-      // the three js center is in the middle of the screen so we have to substract
-      // half of the video width and height from the facemesh points to center the coordinates
-      newPoint.x -= videoRef.current.videoWidth / 2;
-      newPoint.y -= videoRef.current.videoHeight / 2;
-
-      // normalize the points
-      newPoint.x /= VIDEO_WIDTH;
-      newPoint.y /= -VIDEO_HEIGHT;
-
-      return newPoint;
-    };
-
-    const mapVal = (value, start1, stop1, start2, stop2) =>
-      start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
-
-    // get required points from the result
-    const points = getFaceMeshCoords(face);
-    if (currentModelRef.current !== null && points.length > 0) {
-      // flip
-      // points[0].x -= videoRef.current.videoWidth / 2;
-
-      const leftEye = convertPoint(points[0]);
-      const rightEye = convertPoint(points[1]);
-
-      const centerX = leftEye.x + (rightEye.x - leftEye.x) / 2;
-      const centerY = leftEye.y + (rightEye.y - leftEye.y) / 2;
-
-      const center = convertPoint(points[2]);
-
-      const box = new THREE.Box3().setFromObject(currentModelRef.current);
-      const size = new THREE.Vector3();
-      box.getSize(size);
-
-      currentModelRef.current.position.x = centerX;
-      currentModelRef.current.position.y = centerY;
-      // console.log(center.z);
-    }
-  };
-
-  useEffect(() => {
-    runFacemesh();
   }, []);
 
   const saveScreenshot = () => {
@@ -275,13 +272,12 @@ export default function ThreeCanvas() {
       <div
         ref={canvasRef}
         style={{
-          overflow: "hidden",
           // opacity: 0.3,
           position: "absolute",
           left: 0,
           right: 0,
           width: "100%",
-          height: "100%",
+          height: "calc(100% - 100px)",
         }}
       />
     </>

@@ -11,20 +11,20 @@ const Frame = styled.div`
   border-radius: 15px;
   margin-left: auto;
   margin-right: auto;
+  overflow: hidden;
 `;
 
 const BottomOverlay = styled.div`
   background-color: black;
-  position: absolute;
-  bottom: 0;
-  left: 0;
+  /* position: absolute; */
   width: 100%;
+  z-index: 100;
   height: 100px;
   color: white;
   text-align: center;
   font-size: 14px;
 
-  opacity: 0;
+  /* opacity: 0; */
   display: flex;
   justify-content: space-around;
   border-bottom-right-radius: 10px;
@@ -69,31 +69,35 @@ export default function CameraFrame({ setScreenshots }) {
   };
 
   return (
-    <Frame className="shadow-sm">
-      {ThreeCanvasComponent}
-      <BottomOverlay className="container">
-        <div className="row align-items-center w-100">
-          <Button className="col">
-            <div className="row">
-              <MdOpenWith size="25px" />
-            </div>
-            <div className="row">
-              <p>Frame position</p>
-            </div>
-          </Button>
-          <CameraButton className="row align-items-center" onClick={newScreenshot}>
-            <MdCameraAlt size="50px" color="white" />
-          </CameraButton>
-          <Button className="col">
-            <div className="row">
-              <MdDelete size="25px" />
-            </div>
-            <div className="row">
-              <p>Remove frame</p>
-            </div>
-          </Button>
-        </div>
-      </BottomOverlay>
+    <Frame className="shadow-sm col">
+      <div className="row" style={{ height: "calc(100% - 100px)" }}>
+        {ThreeCanvasComponent}
+      </div>
+      <div className="row">
+        <BottomOverlay>
+          <div className="row align-items-center w-100">
+            <Button className="col">
+              <div className="row">
+                <MdOpenWith size="25px" />
+              </div>
+              <div className="row">
+                <p>Frame position</p>
+              </div>
+            </Button>
+            <CameraButton className="row align-items-center" onClick={newScreenshot}>
+              <MdCameraAlt size="50px" color="white" />
+            </CameraButton>
+            <Button className="col">
+              <div className="row">
+                <MdDelete size="25px" />
+              </div>
+              <div className="row">
+                <p>Remove frame</p>
+              </div>
+            </Button>
+          </div>
+        </BottomOverlay>
+      </div>
     </Frame>
   );
 }
