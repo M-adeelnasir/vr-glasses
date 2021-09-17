@@ -137,6 +137,8 @@ export default function ThreeCanvas() {
 
     // show webcam
 
+    // we have 2 options to show the webcam inside three js, set it as scene background or display it on a plane as it's texture
+
     scene.background = videoTexture;
 
     // const geometry = new THREE.PlaneGeometry(2, 2);
@@ -169,7 +171,9 @@ export default function ThreeCanvas() {
       irisModelUrl: "./models/3/model.json",
     });
 
-    const convertPoint = (point) => {
+    function convertPoint(point) {
+      // converts from video coordinates to three js 3d world coordinates
+
       const newPoint = { ...point };
 
       const w = renderer.domElement.clientWidth;
@@ -185,12 +189,13 @@ export default function ThreeCanvas() {
       newPoint.y /= -h;
 
       return newPoint;
-    };
+    }
 
-    // const mapVal = (value, start1, stop1, start2, stop2) =>
-    //   start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
+    function mapVal(value, start1, stop1, start2, stop2) {
+      return start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
+    }
 
-    const detect = async (net) => {
+    async function detect(net) {
       if (!isVideoPlaying(videoRef.current)) {
         return;
       }
@@ -199,29 +204,60 @@ export default function ThreeCanvas() {
       const face = await net.estimateFaces({ input: renderer.domElement });
       // get required points from the result
       const points = getFaceMeshCoords(face);
-      if (currentModelRef.current !== null && points.length > 0) {
+      if (currentModelRef.current !== null && points !== null) {
         // flip
         // points[0].x -= videoRef.current.videoWidth / 2;
 
-        const leftEye = convertPoint(points[0]);
-        const rightEye = convertPoint(points[1]);
+        const center = convertPoint(points.center);
 
-        const centerX = leftEye.x + (rightEye.x - leftEye.x) / 2;
-        const centerY = leftEye.y + (rightEye.y - leftEye.y) / 2;
+        dot.position.x = center.x;
+        dot.position.y = center.y;
 
-        const center = convertPoint(points[2]);
-
+        // we also need to add a small offset to the position so the glasses look good on the face
         const box = new THREE.Box3().setFromObject(currentModelRef.current);
         const size = new THREE.Vector3();
         box.getSize(size);
 
-        currentModelRef.current.position.x = center.x;
-        currentModelRef.current.position.y = center.y;
-        // console.log(center.z);
-      }
-    };
+        const model = currentModelRef.current;
 
-    const animate = () => {
+        model.position.x = center.x;
+        model.position.y = center.y - size.y / 2;
+
+        // minz: -22
+        // maxz = -2
+
+        const leftEar = convertPoint(points.leftEar);
+        const rightEar = convertPoint(points.rightEar);
+
+        const faceWidth = Math.abs(rightEar.x - leftEar.x);
+
+        const scale = mapVal(faceWidth, 0, 1, 1, 17);
+        model.scale.set(scale, scale, scale);
+
+        // TODO: maybe offset the model a bit on the z axis when the user's head is turned same for the ydiff
+
+        const zdiff = rightEar.z - leftEar.z;
+        // console.log(zdiff);
+        if (Math.abs(zdiff) > 30) {
+          const angle = mapVal(zdiff, -80, 80, -Math.PI / 8, Math.PI / 8);
+          model.rotation.y = angle;
+        } else {
+          model.rotation.y = 0;
+        }
+
+        const ydiff = rightEar.y - leftEar.y;
+
+        if (Math.abs(ydiff) > 0.05) {
+          const angle = mapVal(ydiff, -1, 1, -Math.PI / 2, Math.PI / 2);
+          console.log(angle);
+          model.rotation.z = angle;
+        } else {
+          model.rotation.z = 0;
+        }
+      }
+    }
+
+    function animate() {
       requestAnimationFrame(animate);
 
       if (aiModel && currentModelRef.current) {
@@ -237,12 +273,8 @@ export default function ThreeCanvas() {
         dot.visible = true;
       }
 
-      if (currentModelRef.current !== null) {
-        dot.position.x = currentModelRef.current.position.x;
-        dot.position.y = currentModelRef.current.position.y;
-      }
       renderer.render(scene, camera);
-    };
+    }
 
     animate();
   }, []);
