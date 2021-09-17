@@ -8,8 +8,10 @@ import * as tf from "@tensorflow/tfjs";
 import ModelStore from "../stores/ModelStore";
 import getFaceMeshCoords from "../lib/getFaceMeshCoords";
 
-const isVideoPlaying = (vid) =>
-  !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
+const isVideoPlaying = (vid) => !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
+
+const VIDEO_WIDTH = 320;
+const VIDEO_HEIGHT = 240;
 
 export default function ThreeCanvas() {
   const canvasRef = useRef(null);
@@ -64,6 +66,7 @@ export default function ThreeCanvas() {
       model.scale.setScalar(8);
       // model.rotation.y = -Math.PI / 4;
       currentModelRef.current = model;
+      // currentModelRef.current.scale.set(new THREE.Vector3(2));
       sceneRef.current.add(model);
     }
   }, [currentModelIndex]);
@@ -75,12 +78,14 @@ export default function ThreeCanvas() {
     // first, we clear the previous scene
     canvasRef.current.innerHTML = "";
 
+    // init renderer
     rendererRef.current = new THREE.WebGLRenderer({
       preserveDrawingBuffer: true,
       antialias: true,
     });
-
     const renderer = rendererRef.current;
+
+    renderer.domElement.style.transform = "translateX(-25%)";
 
     renderer.physicallyCorrectLights = true;
     // renderer.outputEncoding = THREE.sRGBEncoding;
@@ -90,23 +95,24 @@ export default function ThreeCanvas() {
     sceneRef.current = new THREE.Scene();
     const scene = sceneRef.current;
 
-    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-    camera.position.set(0, -0.0, 1.3);
+    const camera = new THREE.PerspectiveCamera(75);
+    camera.position.set(0, 0, 1.2);
     canvasRef.current.appendChild(renderer.domElement);
 
     const resizeCanvas = () => {
-      const width = canvasRef.current.clientWidth;
-      const height = canvasRef.current.clientHeight;
-      renderer.setSize(width, height);
-      camera.aspect = width / height;
+      const wrapperHeight = canvasRef.current.clientHeight;
+
+      const aspect = VIDEO_WIDTH / VIDEO_HEIGHT;
+
+      renderer.setSize(wrapperHeight * aspect, wrapperHeight);
+      camera.aspect = aspect;
       camera.updateProjectionMatrix();
     };
 
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
 
-    const isVideoPlaying = (vid) =>
-      !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
+    const isVideoPlaying = (vid) => !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
 
     const video = videoRef.current;
 
@@ -131,17 +137,20 @@ export default function ThreeCanvas() {
 
     // show webcam
 
-    // scene.background = videoTexture;
+    scene.background = videoTexture;
 
-    const geometry = new THREE.PlaneGeometry(2, 2);
-    const material = new THREE.MeshBasicMaterial({
-    map: videoTexture,
-    side: THREE.DoubleSide,
-    });
-    const plane = new THREE.Mesh(geometry, material);
-    plane.position.z = -1;
-    plane.scale.set(2, 2, 1);
-    scene.add(plane);
+    // const geometry = new THREE.PlaneGeometry(2, 2);
+    // const material = new THREE.MeshBasicMaterial({
+    //   map: videoTexture,
+    //   side: THREE.DoubleSide,
+    // });
+    // const plane = new THREE.Mesh(geometry, material);
+    // plane.position.z = -2;
+    // const ratio = VIDEO_WIDTH / VIDEO_HEIGHT;
+    // const multiplier = 2;
+    // const size = ratio * multiplier;
+    // plane.scale.set(size, size, 1);
+    // scene.add(plane);
 
     // environment
     const light = new THREE.HemisphereLight(0xffffff, 0xffffbb, 1);
@@ -150,8 +159,20 @@ export default function ThreeCanvas() {
     scene.add(light);
     scene.add(directionalLight);
 
+    const dotGeometry = new THREE.BufferGeometry();
+    dotGeometry.setAttribute("position", new THREE.Float32BufferAttribute(new THREE.Vector3().toArray(), 3));
+    const dotMaterial = new THREE.PointsMaterial({ size: 0.01, color: 0xff00ff });
+    const dot = new THREE.Points(dotGeometry, dotMaterial);
+    scene.add(dot);
+
     const animate = () => {
       requestAnimationFrame(animate);
+
+      if (currentModelRef.current !== null) {
+        dot.position.x = currentModelRef.current.position.x;
+        dot.position.y = currentModelRef.current.position.y;
+      }
+
       renderer.render(scene, camera);
     };
 
@@ -161,24 +182,45 @@ export default function ThreeCanvas() {
   // ai model
 
   const runFacemesh = async () => {
-    const net = await facemesh.load(facemesh.SupportedPackages.mediapipeFacemesh, {
-      detectorModelUrl: "./models/1/model.json",
-      modelUrl: "./models/2/model.json",
-      irisModelUrl: "./models/3/model.json",
-    });
-
-    detect(net);
+    facemesh
+      .load(facemesh.SupportedPackages.mediapipeFacemesh, {
+        detectorModelUrl: "./models/1/model.json",
+        modelUrl: "./models/2/model.json",
+        irisModelUrl: "./models/3/model.json",
+      })
+      .then((net) => {
+        detect(net);
+      });
   };
 
   const detect = async (net) => {
+    requestAnimationFrame(() => detect(net));
+
     if (!isVideoPlaying(videoRef.current)) {
       return;
     }
 
-    requestAnimationFrame(() => detect(net));
-
     // run the ai model
+    // TODO: maybe pass the three js canvas as input
     const face = await net.estimateFaces({ input: videoRef.current });
+
+    const convertPoint = (point) => {
+      const newPoint = { ...point };
+
+      // the three js center is in the middle of the screen so we have to substract
+      // half of the video width and height from the facemesh points to center the coordinates
+      newPoint.x -= videoRef.current.videoWidth / 2;
+      newPoint.y -= videoRef.current.videoHeight / 2;
+
+      // normalize the points
+      newPoint.x /= VIDEO_WIDTH;
+      newPoint.y /= -VIDEO_HEIGHT;
+
+      return newPoint;
+    };
+
+    const mapVal = (value, start1, stop1, start2, stop2) =>
+      start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
 
     // get required points from the result
     const points = getFaceMeshCoords(face);
@@ -186,18 +228,21 @@ export default function ThreeCanvas() {
       // flip
       // points[0].x -= videoRef.current.videoWidth / 2;
 
-      // the three js center is in the middle of the screen so we have to substract half of the video width and height from the facemesh points to center the coordinates
-      points[2].x -= videoRef.current.videoWidth / 2;
-      points[2].y -= videoRef.current.videoHeight / 2;
+      const leftEye = convertPoint(points[0]);
+      const rightEye = convertPoint(points[1]);
 
-      // normalize the points
-      points[2].x /= videoRef.current.videoWidth;
-      points[2].y /= -videoRef.current.videoHeight;
+      const centerX = leftEye.x + (rightEye.x - leftEye.x) / 2;
+      const centerY = leftEye.y + (rightEye.y - leftEye.y) / 2;
 
-      currentModelRef.current.position.x = points[2].x;
-      currentModelRef.current.position.y = points[2].y;
+      const center = convertPoint(points[2]);
 
-      // TODO: glasses size and rotation
+      const box = new THREE.Box3().setFromObject(currentModelRef.current);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+
+      currentModelRef.current.position.x = centerX;
+      currentModelRef.current.position.y = centerY;
+      // console.log(center.z);
     }
   };
 
@@ -214,8 +259,31 @@ export default function ThreeCanvas() {
   // the div's height is 100% - the bottom overlay height
   const Component = (
     <>
-      <div ref={canvasRef} style={{ minHeight: "70vh", height: "calc(100% - 100px)" }} />
-      <video ref={videoRef} style={{ display: "none" }} autoPlay playsInline></video>
+      <video
+        ref={videoRef}
+        style={{
+          display: "none",
+          position: "absolute",
+          left: 0,
+          right: 0,
+          width: VIDEO_WIDTH,
+          height: VIDEO_HEIGHT,
+        }}
+        autoPlay
+        playsInline
+      ></video>
+      <div
+        ref={canvasRef}
+        style={{
+          overflow: "hidden",
+          // opacity: 0.3,
+          position: "absolute",
+          left: 0,
+          right: 0,
+          width: "100%",
+          height: "100%",
+        }}
+      />
     </>
   );
 

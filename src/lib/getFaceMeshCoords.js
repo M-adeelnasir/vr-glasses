@@ -7,23 +7,23 @@ export default function getFaceMeshCoords(face) {
   const keypoints = face[0].scaledMesh;
 
   const points = [
-    // left ear
+    // left eye
     {
-      x: keypoints[127][0],
-      y: keypoints[127][1],
-      z: keypoints[127][2],
+      x: keypoints[145][0],
+      y: keypoints[145][1],
+      z: keypoints[145][2],
     },
-    // right ear
+    // right eye
     {
-      x: keypoints[356][0],
-      y: keypoints[356][1],
-      z: keypoints[356][2],
+      x: keypoints[174][0],
+      y: keypoints[174][1],
+      z: keypoints[174][2],
     },
     // center
     {
-      x: keypoints[168][0],
-      y: keypoints[168][1],
-      z: keypoints[168][2],
+      x: keypoints[6][0],
+      y: keypoints[6][1],
+      z: keypoints[6][2],
     }
   ];
 

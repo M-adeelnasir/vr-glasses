@@ -24,6 +24,7 @@ const BottomOverlay = styled.div`
   text-align: center;
   font-size: 14px;
 
+  opacity: 0;
   display: flex;
   justify-content: space-around;
   border-bottom-right-radius: 10px;
