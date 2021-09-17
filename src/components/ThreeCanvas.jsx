@@ -8,8 +8,10 @@ import * as tf from "@tensorflow/tfjs";
 import ModelStore from "../stores/ModelStore";
 import getFaceMeshCoords from "../lib/getFaceMeshCoords";
 
-const isVideoPlaying = (vid) =>
-  !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
+const isVideoPlaying = (vid) => !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
+
+const VIDEO_WIDTH = 320;
+const VIDEO_HEIGHT = 240;
 
 export default function ThreeCanvas() {
   const canvasRef = useRef(null);
@@ -64,23 +66,26 @@ export default function ThreeCanvas() {
       model.scale.setScalar(8);
       // model.rotation.y = -Math.PI / 4;
       currentModelRef.current = model;
+      // currentModelRef.current.scale.set(new THREE.Vector3(2));
       sceneRef.current.add(model);
     }
   }, [currentModelIndex]);
 
-  useEffect(() => {
+  useEffect(async () => {
     if (!videoRef || !canvasRef) {
       return;
     }
     // first, we clear the previous scene
     canvasRef.current.innerHTML = "";
 
+    // init renderer
     rendererRef.current = new THREE.WebGLRenderer({
       preserveDrawingBuffer: true,
       antialias: true,
     });
-
     const renderer = rendererRef.current;
+
+    renderer.domElement.style.transform = "translateX(-25%)";
 
     renderer.physicallyCorrectLights = true;
     // renderer.outputEncoding = THREE.sRGBEncoding;
@@ -90,23 +95,24 @@ export default function ThreeCanvas() {
     sceneRef.current = new THREE.Scene();
     const scene = sceneRef.current;
 
-    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-    camera.position.set(0, -0.0, 1.3);
+    const camera = new THREE.PerspectiveCamera(75);
+    camera.position.set(0, 0, 1.2);
     canvasRef.current.appendChild(renderer.domElement);
 
     const resizeCanvas = () => {
-      const width = canvasRef.current.clientWidth;
-      const height = canvasRef.current.clientHeight;
-      renderer.setSize(width, height);
-      camera.aspect = width / height;
+      const wrapperHeight = canvasRef.current.clientHeight;
+
+      const aspect = VIDEO_WIDTH / VIDEO_HEIGHT;
+
+      renderer.setSize(wrapperHeight * aspect, wrapperHeight);
+      camera.aspect = aspect;
       camera.updateProjectionMatrix();
     };
 
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
 
-    const isVideoPlaying = (vid) =>
-      !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
+    const isVideoPlaying = (vid) => !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
 
     const video = videoRef.current;
 
@@ -131,17 +137,20 @@ export default function ThreeCanvas() {
 
     // show webcam
 
-    // scene.background = videoTexture;
+    // we have 2 options to show the webcam inside three js, set it as scene background or display it on a plane as it's texture
 
-    const geometry = new THREE.PlaneGeometry(2, 2);
-    const material = new THREE.MeshBasicMaterial({
-    map: videoTexture,
-    side: THREE.DoubleSide,
-    });
-    const plane = new THREE.Mesh(geometry, material);
-    plane.position.z = -1;
-    plane.scale.set(2, 2, 1);
-    scene.add(plane);
+    scene.background = videoTexture;
+
+    // const geometry = new THREE.PlaneGeometry(2, 2);
+    // const material = new THREE.MeshBasicMaterial({
+    //   map: videoTexture,
+    //   side: THREE.DoubleSide,
+    // });
+    // const plane = new THREE.Mesh(geometry, material);
+    // plane.position.z = -2;
+    // const ratio = VIDEO_WIDTH / VIDEO_HEIGHT;
+    // plane.scale.set(1 * ratio, 1, 1);
+    // scene.add(plane);
 
     // environment
     const light = new THREE.HemisphereLight(0xffffff, 0xffffbb, 1);
@@ -150,59 +159,124 @@ export default function ThreeCanvas() {
     scene.add(light);
     scene.add(directionalLight);
 
-    const animate = () => {
-      requestAnimationFrame(animate);
-      renderer.render(scene, camera);
-    };
+    const dotGeometry = new THREE.BufferGeometry();
+    dotGeometry.setAttribute("position", new THREE.Float32BufferAttribute(new THREE.Vector3().toArray(), 3));
+    const dotMaterial = new THREE.PointsMaterial({ size: 0.01, color: 0xff00ff });
+    const dot = new THREE.Points(dotGeometry, dotMaterial);
+    scene.add(dot);
 
-    animate();
-  }, []);
-
-  // ai model
-
-  const runFacemesh = async () => {
-    const net = await facemesh.load(facemesh.SupportedPackages.mediapipeFacemesh, {
+    const aiModel = await facemesh.load(facemesh.SupportedPackages.mediapipeFacemesh, {
       detectorModelUrl: "./models/1/model.json",
       modelUrl: "./models/2/model.json",
       irisModelUrl: "./models/3/model.json",
     });
 
-    detect(net);
-  };
+    function convertPoint(point) {
+      // converts from video coordinates to three js 3d world coordinates
 
-  const detect = async (net) => {
-    if (!isVideoPlaying(videoRef.current)) {
-      return;
-    }
+      const newPoint = { ...point };
 
-    requestAnimationFrame(() => detect(net));
+      const w = renderer.domElement.clientWidth;
+      const h = renderer.domElement.clientHeight;
 
-    // run the ai model
-    const face = await net.estimateFaces({ input: videoRef.current });
-
-    // get required points from the result
-    const points = getFaceMeshCoords(face);
-    if (currentModelRef.current !== null && points.length > 0) {
-      // flip
-      // points[0].x -= videoRef.current.videoWidth / 2;
-
-      // the three js center is in the middle of the screen so we have to substract half of the video width and height from the facemesh points to center the coordinates
-      points[2].x -= videoRef.current.videoWidth / 2;
-      points[2].y -= videoRef.current.videoHeight / 2;
+      // the three js center is in the middle of the screen so we have to substract
+      // half of the video width and height from the facemesh points to center the coordinates
+      newPoint.x -= w;
+      newPoint.y -= h;
 
       // normalize the points
-      points[2].x /= videoRef.current.videoWidth;
-      points[2].y /= -videoRef.current.videoHeight;
+      newPoint.x /= w;
+      newPoint.y /= -h;
 
-      currentModelRef.current.position.x = points[2].x;
-      currentModelRef.current.position.y = points[2].y;
-
-      // TODO: glasses size and rotation
+      return newPoint;
     }
-  };
 
-  useEffect(() => {
-    runFacemesh();
+    function mapVal(value, start1, stop1, start2, stop2) {
+      return start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
+    }
+
+    async function detect(net) {
+      if (!isVideoPlaying(videoRef.current)) {
+        return;
+      }
+
+      // run the ai model
+      const face = await net.estimateFaces({ input: renderer.domElement });
+      // get required points from the result
+      const points = getFaceMeshCoords(face);
+      if (currentModelRef.current !== null && points !== null) {
+        // flip
+        // points[0].x -= videoRef.current.videoWidth / 2;
+
+        const center = convertPoint(points.center);
+
+        dot.position.x = center.x;
+        dot.position.y = center.y;
+
+        // we also need to add a small offset to the position so the glasses look good on the face
+        const box = new THREE.Box3().setFromObject(currentModelRef.current);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+
+        const model = currentModelRef.current;
+
+        model.position.x = center.x;
+        model.position.y = center.y - size.y / 2;
+
+        // minz: -22
+        // maxz = -2
+
+        const leftEar = convertPoint(points.leftEar);
+        const rightEar = convertPoint(points.rightEar);
+
+        const faceWidth = Math.abs(rightEar.x - leftEar.x);
+
+        const scale = mapVal(faceWidth, 0, 1, 1, 17);
+        model.scale.set(scale, scale, scale);
+
+        // TODO: maybe offset the model a bit on the z axis when the user's head is turned same for the ydiff
+
+        const zdiff = rightEar.z - leftEar.z;
+        // console.log(zdiff);
+        if (Math.abs(zdiff) > 30) {
+          const angle = mapVal(zdiff, -80, 80, -Math.PI / 8, Math.PI / 8);
+          model.rotation.y = angle;
+        } else {
+          model.rotation.y = 0;
+        }
+
+        const ydiff = rightEar.y - leftEar.y;
+
+        if (Math.abs(ydiff) > 0.05) {
+          const angle = mapVal(ydiff, -1, 1, -Math.PI / 2, Math.PI / 2);
+          console.log(angle);
+          model.rotation.z = angle;
+        } else {
+          model.rotation.z = 0;
+        }
+      }
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      if (aiModel && currentModelRef.current) {
+        // hide the model when detecting the face so it doesn't interfere
+        currentModelRef.current.visible = false;
+        dot.visible = false;
+
+        // I think I need to render the scene twice, once with the face and once with the models, this way I can detect the faces from the canvas without the model interfering
+        renderer.render(scene, camera);
+        detect(aiModel);
+
+        currentModelRef.current.visible = true;
+        dot.visible = true;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
   }, []);
 
   const saveScreenshot = () => {
@@ -214,8 +288,30 @@ export default function ThreeCanvas() {
   // the div's height is 100% - the bottom overlay height
   const Component = (
     <>
-      <div ref={canvasRef} style={{ minHeight: "70vh", height: "calc(100% - 100px)" }} />
-      <video ref={videoRef} style={{ display: "none" }} autoPlay playsInline></video>
+      <video
+        ref={videoRef}
+        style={{
+          display: "none",
+          position: "absolute",
+          left: 0,
+          right: 0,
+          width: VIDEO_WIDTH,
+          height: VIDEO_HEIGHT,
+        }}
+        autoPlay
+        playsInline
+      ></video>
+      <div
+        ref={canvasRef}
+        style={{
+          // opacity: 0.3,
+          position: "absolute",
+          left: 0,
+          right: 0,
+          width: "100%",
+          height: "calc(100% - 100px)",
+        }}
+      />
     </>
   );
 
