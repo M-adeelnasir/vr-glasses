@@ -230,6 +230,8 @@ export default function ThreeCanvas() {
         model.rotation.z = zangle;
         model.position.y += mapVal(Math.abs(zangle), 0, 1, 0, size.y);
         model.scale.multiplyScalar(mapVal(Math.abs(zangle), 0, 1, 1, 1.6));
+
+        // TODO: fix when user inclines forward
       }
     }
 
