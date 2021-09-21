@@ -6,7 +6,6 @@ import * as facemesh from "@tensorflow-models/face-landmarks-detection";
 import * as tf from "@tensorflow/tfjs";
 
 import ModelStore from "../stores/ModelStore";
-import getFaceMeshCoords from "../lib/getFaceMeshCoords";
 
 const isVideoPlaying = (vid) =>
   !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
@@ -20,8 +19,6 @@ export default function ThreeCanvas() {
   const rendererRef = useRef(null);
   const sceneRef = useRef(null);
   const currentModelRef = useRef(null);
-
-  const pointRef = useRef(null);
 
   const [models, setModels] = useState(null);
 
@@ -64,7 +61,6 @@ export default function ThreeCanvas() {
 
       // and add a new one
       const model = models[currentModelIndex];
-      model.scale.setScalar(8);
       // model.rotation.y = -Math.PI / 4;
       currentModelRef.current = model;
       // currentModelRef.current.scale.set(new THREE.Vector3(2));
@@ -139,15 +135,6 @@ export default function ThreeCanvas() {
     scene.add(light);
     scene.add(directionalLight);
 
-    const dotGeometry = new THREE.BufferGeometry();
-    dotGeometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(new THREE.Vector3().toArray(), 3)
-    );
-    const dotMaterial = new THREE.PointsMaterial({ size: 0.01, color: 0xff00ff });
-    const dot = new THREE.Points(dotGeometry, dotMaterial);
-    scene.add(dot);
-
     const aiModel = await facemesh.load(facemesh.SupportedPackages.mediapipeFacemesh, {
       detectorModelUrl: "./models/1/model.json",
       modelUrl: "./models/2/model.json",
@@ -169,7 +156,7 @@ export default function ThreeCanvas() {
 
       // normalize the points
       newPoint.x /= w;
-      newPoint.y /= -h;
+      newPoint.y /= h;
 
       return newPoint;
     }
@@ -196,62 +183,53 @@ export default function ThreeCanvas() {
         const size = new THREE.Vector3();
         box.getSize(size);
 
-        const annotations = faces[0].annotations;
+        const points = faces[0].annotations;
 
-        const midwayBetweenEyes = convertPoint({
-          x: annotations.midwayBetweenEyes[0][0],
-          y: annotations.midwayBetweenEyes[0][1],
-          z: annotations.midwayBetweenEyes[0][2],
+        // FIND POSITION
+        const betweenEyes = convertPoint({
+          x: points.midwayBetweenEyes[0][0],
+          y: points.midwayBetweenEyes[0][1],
+          z: points.midwayBetweenEyes[0][2],
         });
 
-        // position
-        model.position.set(
-          midwayBetweenEyes.x,
-          midwayBetweenEyes.y,
-          0
-          // -camera.position.z + midwayBetweenEyes.z
-        );
+        model.position.set(betweenEyes.x, -betweenEyes.y - size.y * 0.85, 0);
 
+        // FIND SCALE
+        const leftEyeUpper1 = convertPoint({
+          x: points.leftEyeUpper1[3][0],
+          y: points.leftEyeUpper1[3][1],
+          z: points.leftEyeUpper1[3][2],
+        });
+        const rightEyeUpper1 = convertPoint({
+          x: points.rightEyeUpper1[3][0],
+          y: points.rightEyeUpper1[3][1],
+          z: points.rightEyeUpper1[3][2],
+        });
+
+        const eyeDistance = Math.sqrt(
+          (leftEyeUpper1.x - rightEyeUpper1.x) ** 2,
+          (leftEyeUpper1.y - rightEyeUpper1.y) ** 2,
+          (leftEyeUpper1.z - rightEyeUpper1.z) ** 2
+        );
+        // 0.1 --> 0.9
+        model.scale.setScalar(eyeDistance * 34);
+
+        // FIND ROTATION
         const noseBottom = convertPoint({
-          x: annotations.noseBottom[0][0],
-          y: annotations.noseBottom[0][1],
-          z: annotations.noseBottom[0][2],
+          x: points.noseBottom[0][0],
+          y: points.noseBottom[0][1],
+          z: points.noseBottom[0][2],
         });
 
-        model.up.x = midwayBetweenEyes.x - noseBottom.x;
-        model.up.y = midwayBetweenEyes.y - noseBottom.y;
-        model.up.z = midwayBetweenEyes.z - noseBottom.z;
+        const vec = {
+          x: noseBottom.x - betweenEyes.x,
+          y: noseBottom.y - betweenEyes.y,
+        };
 
-        const length = Math.sqrt(model.up.x ** 2 + model.up.y ** 2 + model.up.z ** 2);
-        model.up.x /= length;
-        model.up.y /= length;
-        model.up.z /= length;
-
-        const leftEyeUpper = convertPoint({
-          x: annotations.leftEyeUpper1[3][0],
-          y: annotations.leftEyeUpper1[3][1],
-          z: annotations.leftEyeUpper1[3][2],
-        });
-        const rightEyeUpper = convertPoint({
-          x: annotations.rightEyeUpper1[3][0],
-          y: annotations.rightEyeUpper1[3][1],
-          z: annotations.rightEyeUpper1[3][2],
-        });
-
-        const eyeDist = Math.sqrt(
-          (leftEyeUpper.x - rightEyeUpper.x) ** 2 +
-            (leftEyeUpper.y - rightEyeUpper.y) ** 2 +
-            (leftEyeUpper.z - rightEyeUpper.z) ** 2
-        );
-        // 0.1 -> 9
-
-        const scale = eyeDist * 10;
-        model.scale.set(scale, scale, scale);
-
-        // model.rotation.y = Math.PI;
-        model.rotation.z = Math.PI / 2 - Math.acos(model.up.x);
-
-        // console.log(model.position, model.scale.model.rotation);
+        const zangle = Math.PI / 2 - Math.atan2(vec.y, vec.x);
+        model.rotation.z = zangle;
+        model.position.y += mapVal(Math.abs(zangle), 0, 1, 0, size.y);
+        model.scale.multiplyScalar(mapVal(Math.abs(zangle), 0, 1, 1, 1.6));
       }
     }
 
@@ -261,14 +239,12 @@ export default function ThreeCanvas() {
       if (aiModel && currentModelRef.current) {
         // hide the model when detecting the face so it doesn't interfere
         currentModelRef.current.visible = false;
-        dot.visible = false;
 
         // I think I need to render the scene twice, once with the face and once with the models, this way I can detect the faces from the canvas without the model interfering
         renderer.render(scene, camera);
         detect(aiModel);
 
         currentModelRef.current.visible = true;
-        dot.visible = true;
       }
 
       renderer.render(scene, camera);
@@ -277,11 +253,11 @@ export default function ThreeCanvas() {
     animate();
   }, []);
 
-  const saveScreenshot = () => {
+  function saveScreenshot() {
     const strMime = "image/jpeg";
     const imgData = rendererRef.current.domElement.toDataURL(strMime);
     return imgData;
-  };
+  }
 
   // the div's height is 100% - the bottom overlay height
   const Component = (
