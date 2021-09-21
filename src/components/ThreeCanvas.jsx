@@ -8,7 +8,8 @@ import * as tf from "@tensorflow/tfjs";
 import ModelStore from "../stores/ModelStore";
 import getFaceMeshCoords from "../lib/getFaceMeshCoords";
 
-const isVideoPlaying = (vid) => !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
+const isVideoPlaying = (vid) =>
+  !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
 
 const VIDEO_WIDTH = 320;
 const VIDEO_HEIGHT = 240;
@@ -112,8 +113,6 @@ export default function ThreeCanvas() {
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
 
-    const isVideoPlaying = (vid) => !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
-
     const video = videoRef.current;
 
     // get the webcam video
@@ -131,26 +130,7 @@ export default function ThreeCanvas() {
 
     const videoTexture = new THREE.VideoTexture(video);
 
-    // flip the video
-    // videoTexture.wrapS = THREE.RepeatWrapping;
-    // videoTexture.repeat.x = -1;
-
-    // show webcam
-
-    // we have 2 options to show the webcam inside three js, set it as scene background or display it on a plane as it's texture
-
     scene.background = videoTexture;
-
-    // const geometry = new THREE.PlaneGeometry(2, 2);
-    // const material = new THREE.MeshBasicMaterial({
-    //   map: videoTexture,
-    //   side: THREE.DoubleSide,
-    // });
-    // const plane = new THREE.Mesh(geometry, material);
-    // plane.position.z = -2;
-    // const ratio = VIDEO_WIDTH / VIDEO_HEIGHT;
-    // plane.scale.set(1 * ratio, 1, 1);
-    // scene.add(plane);
 
     // environment
     const light = new THREE.HemisphereLight(0xffffff, 0xffffbb, 1);
@@ -160,7 +140,10 @@ export default function ThreeCanvas() {
     scene.add(directionalLight);
 
     const dotGeometry = new THREE.BufferGeometry();
-    dotGeometry.setAttribute("position", new THREE.Float32BufferAttribute(new THREE.Vector3().toArray(), 3));
+    dotGeometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(new THREE.Vector3().toArray(), 3)
+    );
     const dotMaterial = new THREE.PointsMaterial({ size: 0.01, color: 0xff00ff });
     const dot = new THREE.Points(dotGeometry, dotMaterial);
     scene.add(dot);
@@ -201,59 +184,74 @@ export default function ThreeCanvas() {
       }
 
       // run the ai model
-      const face = await net.estimateFaces({ input: renderer.domElement });
-      // get required points from the result
-      const points = getFaceMeshCoords(face);
-      if (currentModelRef.current !== null && points !== null) {
-        // flip
-        // points[0].x -= videoRef.current.videoWidth / 2;
+      const faces = await net.estimateFaces({
+        input: renderer.domElement,
+        returnTensors: false,
+      });
 
-        const center = convertPoint(points.center);
+      if (currentModelRef.current !== null && faces.length > 0) {
+        const model = currentModelRef.current;
 
-        dot.position.x = center.x;
-        dot.position.y = center.y;
-
-        // we also need to add a small offset to the position so the glasses look good on the face
-        const box = new THREE.Box3().setFromObject(currentModelRef.current);
+        const box = new THREE.Box3().setFromObject(model);
         const size = new THREE.Vector3();
         box.getSize(size);
 
-        const model = currentModelRef.current;
+        const annotations = faces[0].annotations;
 
-        model.position.x = center.x;
-        model.position.y = center.y - size.y / 2;
+        const midwayBetweenEyes = convertPoint({
+          x: annotations.midwayBetweenEyes[0][0],
+          y: annotations.midwayBetweenEyes[0][1],
+          z: annotations.midwayBetweenEyes[0][2],
+        });
 
-        // minz: -22
-        // maxz = -2
+        // position
+        model.position.set(
+          midwayBetweenEyes.x,
+          midwayBetweenEyes.y,
+          0
+          // -camera.position.z + midwayBetweenEyes.z
+        );
 
-        const leftEar = convertPoint(points.leftEar);
-        const rightEar = convertPoint(points.rightEar);
+        const noseBottom = convertPoint({
+          x: annotations.noseBottom[0][0],
+          y: annotations.noseBottom[0][1],
+          z: annotations.noseBottom[0][2],
+        });
 
-        const faceWidth = Math.abs(rightEar.x - leftEar.x);
+        model.up.x = midwayBetweenEyes.x - noseBottom.x;
+        model.up.y = midwayBetweenEyes.y - noseBottom.y;
+        model.up.z = midwayBetweenEyes.z - noseBottom.z;
 
-        const scale = mapVal(faceWidth, 0, 1, 1, 17);
+        const length = Math.sqrt(model.up.x ** 2 + model.up.y ** 2 + model.up.z ** 2);
+        model.up.x /= length;
+        model.up.y /= length;
+        model.up.z /= length;
+
+        const leftEyeUpper = convertPoint({
+          x: annotations.leftEyeUpper1[3][0],
+          y: annotations.leftEyeUpper1[3][1],
+          z: annotations.leftEyeUpper1[3][2],
+        });
+        const rightEyeUpper = convertPoint({
+          x: annotations.rightEyeUpper1[3][0],
+          y: annotations.rightEyeUpper1[3][1],
+          z: annotations.rightEyeUpper1[3][2],
+        });
+
+        const eyeDist = Math.sqrt(
+          (leftEyeUpper.x - rightEyeUpper.x) ** 2 +
+            (leftEyeUpper.y - rightEyeUpper.y) ** 2 +
+            (leftEyeUpper.z - rightEyeUpper.z) ** 2
+        );
+        // 0.1 -> 9
+
+        const scale = eyeDist * 10;
         model.scale.set(scale, scale, scale);
 
-        // TODO: maybe offset the model a bit on the z axis when the user's head is turned same for the ydiff
+        // model.rotation.y = Math.PI;
+        model.rotation.z = Math.PI / 2 - Math.acos(model.up.x);
 
-        const zdiff = rightEar.z - leftEar.z;
-        // console.log(zdiff);
-        if (Math.abs(zdiff) > 30) {
-          const angle = mapVal(zdiff, -80, 80, -Math.PI / 8, Math.PI / 8);
-          model.rotation.y = angle;
-        } else {
-          model.rotation.y = 0;
-        }
-
-        const ydiff = rightEar.y - leftEar.y;
-
-        if (Math.abs(ydiff) > 0.05) {
-          const angle = mapVal(ydiff, -1, 1, -Math.PI / 2, Math.PI / 2);
-          console.log(angle);
-          model.rotation.z = angle;
-        } else {
-          model.rotation.z = 0;
-        }
+        // console.log(model.position, model.scale.model.rotation);
       }
     }
 
