@@ -87,7 +87,8 @@ export default function ThreeCanvas() {
     renderer.physicallyCorrectLights = true;
     // renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.setClearColor(0x000000);
-    renderer.setPixelRatio(window.devicePixelRatio);
+
+    renderer.setPixelRatio(2);
 
     sceneRef.current = new THREE.Scene();
     const scene = sceneRef.current;
@@ -183,6 +184,8 @@ export default function ThreeCanvas() {
         const size = new THREE.Vector3();
         box.getSize(size);
 
+        // NOTE: maybe try to move the camera along with the glasses
+
         const points = faces[0].annotations;
 
         // FIND POSITION
@@ -221,17 +224,17 @@ export default function ThreeCanvas() {
           z: points.noseBottom[0][2],
         });
 
-        const vec = {
-          x: noseBottom.x - betweenEyes.x,
-          y: noseBottom.y - betweenEyes.y,
-        };
-
-        const zangle = Math.PI / 2 - Math.atan2(vec.y, vec.x);
+        const zangle =
+          Math.PI / 2 - Math.atan2(noseBottom.y - betweenEyes.y, noseBottom.x - betweenEyes.x);
         model.rotation.z = zangle;
         model.position.y += mapVal(Math.abs(zangle), 0, 1, 0, size.y);
         model.scale.multiplyScalar(mapVal(Math.abs(zangle), 0, 1, 1, 1.6));
 
-        // TODO: fix when user inclines forward
+        const diff = noseBottom.z - betweenEyes.z;
+        // 0 --> 20
+        if (diff > 0) {
+          model.position.y += mapVal(diff, 0, 20, 0, size.y / 3);
+        }
       }
     }
 
