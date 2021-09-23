@@ -82,7 +82,7 @@ export default function ThreeCanvas() {
     });
     const renderer = rendererRef.current;
 
-    renderer.domElement.style.transform = "translateX(-25%)";
+    renderer.domElement.style.transform = "translateX(-25%) scaleX(-1)";
 
     renderer.physicallyCorrectLights = true;
     // renderer.outputEncoding = THREE.sRGBEncoding;
