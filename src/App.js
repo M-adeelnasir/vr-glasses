@@ -62,10 +62,10 @@ function loadModelsAndPreviews() {
   const models = importAll(require.context("./assets/models/", false, /\.(glb)$/));
 
   ModelStore.update((state) => {
-    state.pairs = previews.map((img, index) => {
+    state.pairs = models.map((model, index) => {
       return {
-        preview: img.default,
-        model: models[index].default,
+        preview: previews[index].default,
+        model: model.default,
       };
     });
   });
