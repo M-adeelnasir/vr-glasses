@@ -184,8 +184,6 @@ export default function ThreeCanvas() {
         const size = new THREE.Vector3();
         box.getSize(size);
 
-        // NOTE: maybe try to move the camera along with the glasses
-
         const points = faces[0].annotations;
 
         // FIND POSITION
