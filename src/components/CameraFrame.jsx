@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import { MdOpenWith, MdDelete, MdCameraAlt } from "react-icons/md";
-import ThreeCanvas from "./ThreeCanvas";
-
+// import ThreeCanvas from "./ThreeCanvas";
+import ThreeCanvas from "./ThreeCanvas_glass";
 const Frame = styled.div`
   width: 100%;
   max-width: 560px;
