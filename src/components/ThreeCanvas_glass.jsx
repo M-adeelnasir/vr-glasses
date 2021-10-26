@@ -15,9 +15,10 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 // import * as facemesh from "@tensorflow-models/face-landmarks-detection";
-import * as tf from "@tensorflow/tfjs";
-import { FaceMesh } from "@mediapipe/face_mesh";
-import * as Facemesh from "@mediapipe/face_mesh";
+// import * as tf from "@tensorflow/tfjs";
+// import * as Facemesh from "@mediapipe/face_mesh";
+
+import { FaceMesh } from "@mediapipe/face_mesh";//New Face detect lib that we are using.
 import * as cam from "@mediapipe/camera_utils";
 import ModelStore from "../stores/ModelStore";
 import Webcam from "react-webcam";
@@ -25,10 +26,12 @@ import Webcam from "react-webcam";
 const isVideoPlaying = (vid) =>
   !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
 
+//Input Video frame size
 const VIDEO_WIDTH = 550;
 const VIDEO_HEIGHT = 467;
-const yawAngles = [];
+
 var web_camera = null;
+
 export default function ThreeCanvas() {
   const canvasRef = useRef(null);
   const webcamRef = useRef(null);
@@ -40,6 +43,7 @@ export default function ThreeCanvas() {
   const [models, setModels] = useState(null);
   const [btnDisable, setBtnDisable] = useState(false);
   const [left, setLeft] = useState(0);
+  //To move canvas based on glass position
   const [canvasLeft, setCanvasLeft] = useState(0);
   const [canvasTop, setCanvasTop] = useState(0);
   //let piviot=null;
@@ -153,6 +157,8 @@ export default function ThreeCanvas() {
       directionalLight.position.z = 1;
       scene.add(light);
       scene.add(directionalLight);
+
+      //init aiModel for face mesh
       const aiModel = new FaceMesh({
         locateFile: (file) => {
           return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
@@ -166,6 +172,7 @@ export default function ThreeCanvas() {
       });
       aiModel.onResults(onResults);
 
+      //Init webcam
       if (
         typeof videoRef.current !== "undefined" &&
         videoRef.current !== null
@@ -179,7 +186,10 @@ export default function ThreeCanvas() {
         });
         web_camera.start();
       }
+
+      //This function occurs for each detection results given by aiModel.
       function onResults(results) {
+        //Checks for face in the webcam
         if (
           results.multiFaceLandmarks &&
           results.multiFaceLandmarks.length > 0
@@ -190,34 +200,33 @@ export default function ThreeCanvas() {
             model.scale.setScalar(1);
             // Position
             {
-              let center8 = results.multiFaceLandmarks[0][8];
+              let center8 = results.multiFaceLandmarks[0][8];// Forehead center point
               setCanvasLeft(-center8.x * VIDEO_WIDTH + VIDEO_WIDTH / 2);
               let top = center8.y * VIDEO_HEIGHT - VIDEO_HEIGHT / 2;
               setCanvasTop(top);
             }
-
-            var V1x = new THREE.Vector3(1, 0, 0);
-            var V1z = new THREE.Vector3(0, 0, 1);
 
             // Rotation
             {
               const noseBottom = results.multiFaceLandmarks[0][164];
               const betweenEyes = results.multiFaceLandmarks[0][168];
 
-              let centerpoint = results.multiFaceLandmarks[0][8];
+              let centerpoint = results.multiFaceLandmarks[0][8];// Forehead center point
               var V2 = new THREE.Vector3(
                 centerpoint.x,
                 centerpoint.y,
                 centerpoint.z
               );
-
+              
+              //Calculation of Pitch angle(face up and down)
               const pitchangle = Math.atan2(
                 noseBottom.z - betweenEyes.z,
                 noseBottom.y - betweenEyes.y
               );
-              // console.log(radians_to_degrees(pitchangle));
-
               model.rotation.x = pitchangle; //pitch
+              // console.log(radians_to_degrees(pitchangle));
+              
+              //Calculation of Yaw angle(face turn left and right)
               let righteyep = results.multiFaceLandmarks[0][33];
               var V2yaw = new THREE.Vector3(
                 righteyep.x,
@@ -234,7 +243,8 @@ export default function ThreeCanvas() {
                 ) + 0.296706;
 
               model.rotation.y = yawangle; //yaw
-
+              
+              //Calculation of Roll angle(face tilt left and right)
               const zangle =
                 1.93732 -
                 Math.atan2(
@@ -245,7 +255,7 @@ export default function ThreeCanvas() {
 
               model.rotation.z = zangle; //roll
 
-              //scale
+              //Scaling of glass
               {
                 var noseBottom3 = new THREE.Vector3(
                   noseBottom.x,
@@ -267,6 +277,7 @@ export default function ThreeCanvas() {
         }
       }
 
+      //Render function
       function animate() {
         requestAnimationFrame(animate);
 
