@@ -180,8 +180,8 @@ export default function ThreeCanvas() {
 
       canvasRef.current.height=element.clientHeight;
       canvasRef.current.width=element.clientWidth;
-    setVIDEO_WIDTH( element.clientWidth);
-    setVIDEO_HEIGHT(element.clientHeight);
+    // setVIDEO_WIDTH( element.clientWidth);
+    // setVIDEO_HEIGHT(element.clientHeight);
  
       //Init webcam
       if (
@@ -192,8 +192,8 @@ export default function ThreeCanvas() {
           onFrame: async () => {
             await aiModel.send({ image: videoRef.current.video });
           },
-          width:  element.clientWidth,
-          height:element.clientHeight,
+          width:  VIDEO_WIDTH,
+          height:VIDEO_HEIGHT,
         });
         web_camera.start();
       }
@@ -201,7 +201,9 @@ export default function ThreeCanvas() {
       //This function occurs for each detection results given by aiModel.
       function onResults(results) {
    
-       
+        var element = document.getElementById('camdiv');
+
+      console.log(element.clientHeight,element.clientWidth);
 
       //Checks for face in the webcam
 
@@ -327,7 +329,7 @@ export default function ThreeCanvas() {
   // the div's height is 100% - the bottom overlay height
   const Component = (
     <>
-       <div id="camdiv" className="row" style={{ height: "calc(100% - 100px)" }}>
+       <div id="camdiv" className="row" style={{ height: "240px",width:"320px" }}>
 
       <Webcam
         ref={videoRef}
