@@ -5,7 +5,7 @@ import ThreeCanvas from "./ThreeCanvas_glass";
 const Frame = styled.div`
   width: 100%;
   max-width: 560px;
-  height: 100%;
+ 
   border: 5px solid white;
   position: relative;
   border-radius: 15px;
