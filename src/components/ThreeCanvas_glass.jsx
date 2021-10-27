@@ -220,6 +220,8 @@ export default function ThreeCanvas() {
             let offsetTop= videoRef.current.video.clientHeight-videoRef.current.video.videoHeight;
             offsetTop=offsetTop/2;
 
+            offsetLeft+=videoRef.current.video.offsetLeft;
+            offsetTop+= videoRef.current.video.offsetTop;
             const piviot = currentModelRef.current;
             const model = piviot.children[0];
             model.scale.setScalar(1);
