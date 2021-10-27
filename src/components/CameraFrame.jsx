@@ -70,9 +70,9 @@ export default function CameraFrame({ setScreenshots }) {
 
   return (
     <Frame className="shadow-sm col">
-      <div className="row" style={{ height: "calc(100% - 100px)" }}>
+
         {ThreeCanvasComponent}
-      </div>
+ 
       <div className="row">
         <BottomOverlay>
           <div className="row align-items-center w-100">

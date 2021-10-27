@@ -27,8 +27,8 @@ const isVideoPlaying = (vid) =>
   !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
 
 //Input Video frame size
-const VIDEO_WIDTH = 550;
-const VIDEO_HEIGHT = 467;
+// const VIDEO_WIDTH = 320;
+// const VIDEO_HEIGHT = 240;
 
 var web_camera = null;
 
@@ -46,6 +46,10 @@ export default function ThreeCanvas() {
   //To move canvas based on glass position
   const [canvasLeft, setCanvasLeft] = useState(0);
   const [canvasTop, setCanvasTop] = useState(0);
+  const [VIDEO_WIDTH, setVIDEO_WIDTH] = useState(320);
+  const [VIDEO_HEIGHT, setVIDEO_HEIGHT] = useState(240);
+  const [firstResize, setFirstResize] = useState(false);
+
   //let piviot=null;
   const modelPaths = ModelStore.useState((state) => state.pairs).map(
     (pair) => pair.model
@@ -106,8 +110,11 @@ export default function ThreeCanvas() {
         return;
       }
       // first, we clear the previous scene
+      var element = document.getElementById('camdiv');
       canvasRef.current.innerHTML = "";
-
+      // setVIDEO_WIDTH(element.clientWidth);
+      // setVIDEO_HEIGHT(element.clientHeight)
+      console.log(element.clientHeight,element.clientWidth);
       // init renderer
       rendererRef.current = new THREE.WebGLRenderer({
         preserveDrawingBuffer: true,
@@ -116,8 +123,8 @@ export default function ThreeCanvas() {
       });
       const renderer = rendererRef.current;
       renderer.setSize(
-        canvasRef.current.clientWidth,
-        canvasRef.current.clientHeight
+        element.clientWidth,
+        element.clientHeight
       );
       renderer.domElement.style.transform = " scaleX(-1)";
 
@@ -138,18 +145,17 @@ export default function ThreeCanvas() {
       const resizeCanvas = () => {
         const wrapperHeight = canvasRef.current.clientHeight;
 
-        const aspect = VIDEO_WIDTH / VIDEO_HEIGHT;
+        const aspect =    videoRef.current.video.videoWidth /   videoRef.current.video.videoHeight;
 
         renderer.setSize(
-          canvasRef.current.clientWidth,
-          canvasRef.current.clientHeight
-        );
+          videoRef.current.video.videoWidth,
+          videoRef.current.video.videoHeight        );
         camera.aspect = aspect;
         camera.updateProjectionMatrix();
       };
 
       window.addEventListener("resize", resizeCanvas);
-      resizeCanvas();
+     
 
       // environment
       const light = new THREE.HemisphereLight(0xffffff, 0xffffbb, 1);
@@ -172,6 +178,11 @@ export default function ThreeCanvas() {
       });
       aiModel.onResults(onResults);
 
+      canvasRef.current.height=element.clientHeight;
+      canvasRef.current.width=element.clientWidth;
+    setVIDEO_WIDTH( element.clientWidth);
+    setVIDEO_HEIGHT(element.clientHeight);
+ 
       //Init webcam
       if (
         typeof videoRef.current !== "undefined" &&
@@ -181,28 +192,44 @@ export default function ThreeCanvas() {
           onFrame: async () => {
             await aiModel.send({ image: videoRef.current.video });
           },
-          width: 550,
-          height: 467,
+          width:  element.clientWidth,
+          height:element.clientHeight,
         });
         web_camera.start();
       }
-
+     
       //This function occurs for each detection results given by aiModel.
       function onResults(results) {
-        //Checks for face in the webcam
+   
+       
+
+      //Checks for face in the webcam
+
         if (
           results.multiFaceLandmarks &&
           results.multiFaceLandmarks.length > 0
         ) {
           if (currentModelRef.current !== null) {
+            if(!firstResize){
+              setFirstResize(true);
+              resizeCanvas();
+            }
+          
+            let offsetLeft= videoRef.current.video.clientWidth-videoRef.current.video.videoWidth;
+            offsetLeft=offsetLeft/2;
+            let offsetTop= videoRef.current.video.clientHeight-videoRef.current.video.videoHeight;
+            offsetTop=offsetTop/2;
+
             const piviot = currentModelRef.current;
             const model = piviot.children[0];
             model.scale.setScalar(1);
+            let vvheight= videoRef.current.video.videoHeight;
+            vvheight-=offsetTop;
             // Position
             {
               let center8 = results.multiFaceLandmarks[0][8];// Forehead center point
-              setCanvasLeft(-center8.x * VIDEO_WIDTH + VIDEO_WIDTH / 2);
-              let top = center8.y * VIDEO_HEIGHT - VIDEO_HEIGHT / 2;
+              setCanvasLeft((-center8.x * videoRef.current.video.videoWidth + videoRef.current.video.videoWidth / 2)+offsetLeft);
+              let top = center8.y *vvheight - vvheight / 2;
               setCanvasTop(top);
             }
 
@@ -298,8 +325,11 @@ export default function ThreeCanvas() {
   // the div's height is 100% - the bottom overlay height
   const Component = (
     <>
+       <div id="camdiv" className="row" style={{ height: "calc(100% - 100px)" }}>
+
       <Webcam
         ref={videoRef}
+        name="webcame"
         mirrored
         style={{
           position: "absolute",
@@ -316,6 +346,7 @@ export default function ThreeCanvas() {
         }}
       />
       <div
+      name="threed"
         ref={canvasRef}
         style={{
           paddingLeft: "0px",
@@ -325,10 +356,11 @@ export default function ThreeCanvas() {
           left: canvasLeft,
           top: canvasTop,
           right: 0,
-          width: "100%",
-          height: "calc(100% - 100px)",
+          width:VIDEO_WIDTH,
+          height:VIDEO_HEIGHT,
         }}
       />
+         </div>
     </>
   );
 
