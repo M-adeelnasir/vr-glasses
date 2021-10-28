@@ -46,8 +46,8 @@ export default function ThreeCanvas() {
   //To move canvas based on glass position
   const [canvasLeft, setCanvasLeft] = useState(0);
   const [canvasTop, setCanvasTop] = useState(0);
-  const [VIDEO_WIDTH, setVIDEO_WIDTH] = useState(320);
-  const [VIDEO_HEIGHT, setVIDEO_HEIGHT] = useState(240);
+  const [VIDEO_WIDTH, setVIDEO_WIDTH] = useState(640);
+  const [VIDEO_HEIGHT, setVIDEO_HEIGHT] = useState(480);
   const [firstResize, setFirstResize] = useState(false);
 
   //let piviot=null;
@@ -329,18 +329,19 @@ export default function ThreeCanvas() {
   // the div's height is 100% - the bottom overlay height
   const Component = (
     <>
-       <div id="camdiv" className="row" style={{ height: "240px",width:"320px" }}>
+       <div id="camdiv" className="row" style={{ height: "480px" }}>
 
       <Webcam
         ref={videoRef}
         name="webcame"
+        id="webcamid"
         mirrored
         style={{
           position: "absolute",
           marginLeft: "auto",
           marginRight: "auto",
           textAlign: "center",
-          // objectFit: "cover",
+          objectFit: "cover",
           paddingLeft: "0px",
           paddingRight: "0px",
           left: 0,
