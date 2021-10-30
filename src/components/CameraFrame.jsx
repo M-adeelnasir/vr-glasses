@@ -5,7 +5,7 @@ import ThreeCanvas from "./ThreeCanvas_glass";
 const Frame = styled.div`
   width: 100%;
   max-width: 560px;
- 
+
   border: 5px solid white;
   position: relative;
   border-radius: 15px;
@@ -63,16 +63,15 @@ const CameraButton = styled.div`
 export default function CameraFrame({ setScreenshots }) {
   const [ThreeCanvasComponent, saveScreenshot] = ThreeCanvas();
 
-  const newScreenshot = () => {
-    const screenshot = saveScreenshot();
+  const newScreenshot = async () => {
+    const screenshot = await saveScreenshot();
     setScreenshots((old) => [...old, screenshot]);
   };
 
   return (
     <Frame className="shadow-sm col">
+      {ThreeCanvasComponent}
 
-        {ThreeCanvasComponent}
- 
       <div className="row">
         <BottomOverlay>
           <div className="row align-items-center w-100">
