@@ -44,6 +44,8 @@ function resizedataURL(datas, wantedWidth, wantedHeight) {
       canvas.height = wantedHeight;
 
       // We resize the image with the canvas method drawImage();
+      ctx.translate(wantedWidth, 0);
+      ctx.scale(-1, 1);
       ctx.drawImage(this, 0, 0, wantedWidth, wantedHeight);
 
       var dataURI = canvas.toDataURL();
@@ -321,25 +323,43 @@ export default function ThreeCanvas() {
   }, [videoRef]);
 
   async function saveScreenshot() {
-    // because the canvas and the webcam are 2 separate elements we have to take screenshots of both and merge them into one
+    const canvas = document.createElement("canvas"); // declare a canvas element in your html
+    const ctx = canvas.getContext("2d");
+    const el = rendererRef.current.domElement;
+    const w = el.clientWidth;
+    const h = el.clientHeight;
+    const v = videoRef.current.video;
+    canvas.width = w;
+    canvas.height = h;
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(v, -w / 5.5, 0, w, h);
+    v.style.backgroundImage = `url(${canvas.toDataURL()})`; // here is the magic
+    // v.style.backgroundSize = "cover";
+    ctx.clearRect(0, 0, w, h); // clean the canvas
 
-    const el = document.getElementById("camdiv");
-    const webcamImage = await resizedataURL(capture(), el.clientWidth * 2, el.clientHeight * 2);
-
-    const ssCanvas = await html2canvas(el, {
+    const ssCanvas = await html2canvas(document.getElementById("camdiv"), {
       backgroundColor: null,
+      scale: 2,
     });
+    return ssCanvas.toDataURL("image/png");
 
-    const img = await mergeImages([
-      {
-        src: webcamImage,
-      },
-      {
-        src: ssCanvas.toDataURL("image/png"),
-      },
-    ]);
+    // const strMime = "image/png";
+    // const el = rendererRef.current.domElement;
+    // const webcamImage = await resizedataURL(capture(), el.clientWidth * 2, el.clientHeight * 2);
+    // const threeImage = rendererRef.current.domElement.toDataURL(strMime);
 
-    return img;
+    // const img = await mergeImages([
+    // {
+    // src: webcamImage,
+    // },
+    // {
+    // src: threeImage,
+    // x: canvasLeft,
+    // y: canvasTop,
+    // },
+    // ]);
+
+    // return img;
   }
 
   // the div's height is 100% - the bottom overlay height
