@@ -69,7 +69,7 @@ export default function CameraFrame({ setScreenshots }) {
   };
 
   return (
-    <Frame className="shadow-sm col">
+    <Frame className="shadow-sm col" id="cam-frame">
       {ThreeCanvasComponent}
 
       <div className="row">
