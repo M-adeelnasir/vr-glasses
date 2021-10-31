@@ -139,11 +139,11 @@ export default function ThreeCanvas() {
         return;
       }
       // first, we clear the previous scene
-      var element = document.getElementById("camdiv");
+      var element = document.getElementById("webcamid");
       canvasRef.current.innerHTML = "";
-      // setVIDEO_WIDTH(element.clientWidth);
-      // setVIDEO_HEIGHT(element.clientHeight)
-      console.log(element.clientHeight, element.clientWidth);
+      setVIDEO_WIDTH(element.clientWidth);
+      setVIDEO_HEIGHT(element.clientHeight);
+
       // init renderer
       rendererRef.current = new THREE.WebGLRenderer({
         preserveDrawingBuffer: true,
@@ -171,9 +171,9 @@ export default function ThreeCanvas() {
       const resizeCanvas = () => {
         const wrapperHeight = canvasRef.current.clientHeight;
 
-        const aspect = videoRef.current.video.videoWidth / videoRef.current.video.videoHeight;
+        const aspect = element.clientWidth / element.clientHeight;
 
-        renderer.setSize(videoRef.current.video.videoWidth, videoRef.current.video.videoHeight);
+        renderer.setSize(element.clientWidth, element.clientHeight);
         camera.aspect = aspect;
         camera.updateProjectionMatrix();
       };
@@ -210,19 +210,55 @@ export default function ThreeCanvas() {
       if (typeof videoRef.current !== "undefined" && videoRef.current !== null) {
         web_camera = new cam.Camera(videoRef.current.video, {
           onFrame: async () => {
-            await aiModel.send({ image: videoRef.current.video });
+            var canvas = document.createElement("canvas");
+            canvas.width = element.clientWidth;
+            canvas.height = element.clientHeight;
+            var ctx = canvas.getContext("2d");
+            var ratio =
+              videoRef.current.video.videoWidth /
+              videoRef.current.video.videoHeight;
+            var width = canvas.height * ratio;
+            var height = canvas.height;
+            // if (width > canvas.width) {
+            //   width = canvas.width
+            //   height = canvas.width/ratio
+            // }
+            let leftv = width - videoRef.current.video.videoWidth;
+            leftv /= 2;
+            ctx.drawImage(
+              videoRef.current.video,
+              leftv,
+              0, // Start at 70/20 pixels from the left and the top of the image (crop),
+              videoRef.current.video.videoWidth - leftv * 2,
+              videoRef.current.video.videoHeight, // "Get" a `50 * 50` (w * h) area from the source image (crop),
+              0,
+              0,
+              canvas.width,
+              canvas.height
+            );
+
+            var dataURI = canvas.toDataURL("image/jpeg");
+            let imgFile = await addImageProcess(dataURI);
+            await aiModel.send({ image: imgFile });
           },
-          width: VIDEO_WIDTH,
-          height: VIDEO_HEIGHT,
+          width: element.clientWidth,
+          height: element.clientHeight,
         });
         web_camera.start();
       }
-
+      function addImageProcess(src) {
+        return new Promise((resolve, reject) => {
+          let img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.style.objectFit = "cover";
+          img.src = src;
+        });
+      }
       //This function occurs for each detection results given by aiModel.
       function onResults(results) {
-        var element = document.getElementById("camdiv");
-
-        console.log(element.clientHeight, element.clientWidth);
+        // var element = document.getElementById('camdiv');
+        var element = document.getElementById("webcamid");
 
         //Checks for face in the webcam
 
@@ -233,10 +269,13 @@ export default function ThreeCanvas() {
               resizeCanvas();
             }
 
-            let offsetLeft = videoRef.current.video.clientWidth - videoRef.current.video.videoWidth;
+            let offsetLeft =
+              videoRef.current.video.clientWidth -
+              videoRef.current.video.videoWidth;
             offsetLeft = offsetLeft / 2;
             let offsetTop =
-              videoRef.current.video.clientHeight - videoRef.current.video.videoHeight;
+              videoRef.current.video.clientHeight -
+              videoRef.current.video.videoHeight;
             offsetTop = offsetTop / 2;
 
             offsetLeft += videoRef.current.video.offsetLeft;
@@ -244,15 +283,13 @@ export default function ThreeCanvas() {
             const piviot = currentModelRef.current;
             const model = piviot.children[0];
             model.scale.setScalar(1);
-            let vvheight = videoRef.current.video.videoHeight;
-            vvheight -= offsetTop;
+            let vvheight = element.clientHeight;
+            // vvheight-=offsetTop;
             // Position
             {
               let center8 = results.multiFaceLandmarks[0][8]; // Forehead center point
               setCanvasLeft(
-                -center8.x * videoRef.current.video.videoWidth +
-                  videoRef.current.video.videoWidth / 2 +
-                  offsetLeft
+                -center8.x * element.clientWidth + element.clientWidth / 2
               );
               let top = center8.y * vvheight - vvheight / 2;
               setCanvasTop(top);
@@ -264,7 +301,11 @@ export default function ThreeCanvas() {
               const betweenEyes = results.multiFaceLandmarks[0][168];
 
               let centerpoint = results.multiFaceLandmarks[0][8]; // Forehead center point
-              var V2 = new THREE.Vector3(centerpoint.x, centerpoint.y, centerpoint.z);
+              var V2 = new THREE.Vector3(
+                centerpoint.x,
+                centerpoint.y,
+                centerpoint.z
+              );
 
               //Calculation of Pitch angle(face up and down)
               const pitchangle = Math.atan2(
@@ -284,14 +325,14 @@ export default function ThreeCanvas() {
                 Math.atan2(noseTop.z - RightEyeEnd.z, noseTop.x - RightEyeEnd.x) + 0.296706;
 
               model.rotation.y = yawangle; //yaw
-
+  // console.log(radians_to_degrees(yawangle));
               //Calculation of Roll angle(face tilt left and right)
               const zangle =
-                1.93732 -
+              1.88496-
                 Math.atan2(noseBottom.y - betweenEyes.y, noseBottom.x - betweenEyes.x) * 1.2;
 
               model.rotation.z = zangle; //roll
-
+              // console.log(radians_to_degrees(zangle));
               //Scaling of glass
               {
                 var noseBottom3 = new THREE.Vector3(noseBottom.x, noseBottom.y, noseBottom.z);
@@ -361,7 +402,11 @@ export default function ThreeCanvas() {
 
     // return img;
   }
-
+  function radians_to_degrees(radians)
+  {
+    var pi = Math.PI;
+    return radians * (180/pi);
+  }
   // the div's height is 100% - the bottom overlay height
   const Component = (
     <>
@@ -371,7 +416,6 @@ export default function ThreeCanvas() {
           name="webcame"
           id="webcamid"
           mirrored
-          screenshotFormat="image/jpeg"
           style={{
             position: "absolute",
             marginLeft: "auto",
