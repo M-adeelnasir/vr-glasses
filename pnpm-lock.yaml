@@ -1,31 +1,43 @@
 lockfileVersion: 5.3
 
 specifiers:
+  '@mediapipe/camera_utils': ^0.3.1632432234
+  '@mediapipe/face_detection': ^0.4.1628005423
+  '@mediapipe/face_mesh': ^0.4.1633559619
   '@tensorflow-models/face-landmarks-detection': ^0.0.3
   '@tensorflow/tfjs': ^3.9.0
   '@testing-library/jest-dom': ^5.11.4
   '@testing-library/react': ^11.1.0
   '@testing-library/user-event': ^12.1.10
+  html2canvas: ^1.3.2
+  merge-images: ^2.0.0
   pullstate: ^1.23.0
   react: ^17.0.2
   react-dom: ^17.0.2
   react-icons: ^4.2.0
   react-scripts: 4.0.3
+  react-webcam: ^6.0.0
   styled-components: ^5.3.1
   three: ^0.132.2
   web-vitals: ^1.0.1
 
 dependencies:
+  '@mediapipe/camera_utils': 0.3.1632432234
+  '@mediapipe/face_detection': 0.4.1628005423
+  '@mediapipe/face_mesh': 0.4.1633559619
   '@tensorflow-models/face-landmarks-detection': 0.0.3
   '@tensorflow/tfjs': 3.9.0
   '@testing-library/jest-dom': 5.14.1
   '@testing-library/react': 11.2.7_react-dom@17.0.2+react@17.0.2
   '@testing-library/user-event': 12.8.3
+  html2canvas: 1.3.2
+  merge-images: 2.0.0
   pullstate: 1.23.0_react@17.0.2
   react: 17.0.2
   react-dom: 17.0.2_react@17.0.2
   react-icons: 4.2.0_react@17.0.2
   react-scripts: 4.0.3_react@17.0.2
+  react-webcam: 6.0.0_react-dom@17.0.2+react@17.0.2
   styled-components: 5.3.1_react-dom@17.0.2+react@17.0.2
   three: 0.132.2
   web-vitals: 1.1.2
@@ -1852,6 +1864,18 @@ packages:
       chalk: 4.1.2
     dev: false
 
+  /@mediapipe/camera_utils/0.3.1632432234:
+    resolution: {integrity: sha512-uGWOSd/1dNUka5/KkDs37pjYoHhFwUtQwQL/zhkQxZHAgYS8oCcz9vupa3pHthUzHDqzTw4XqB7teuoVRO+8/A==}
+    dev: false
+
+  /@mediapipe/face_detection/0.4.1628005423:
+    resolution: {integrity: sha512-oj+vxkQNAGUnTPK2GgTN7uuRt/EQGaVc7HV6igPKbBgp4iYh2o9MIxheADKqUWt5TrgliK2wEvYHEkKBvs7Eqw==}
+    dev: false
+
+  /@mediapipe/face_mesh/0.4.1633559619:
+    resolution: {integrity: sha512-Vc8cdjxS5+O2gnjWH9KncYpUCVXT0h714KlWAsyqJvJbIgUJBqpppbIx8yWcAzBDxm/5cYSuBI5p5ySIPxzcEg==}
+    dev: false
+
   /@nodelib/fs.scandir/2.1.5:
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
     engines: {node: '>= 8'}
@@ -3377,6 +3401,16 @@ packages:
       pascalcase: 0.1.1
     dev: false
 
+  /base64-arraybuffer/0.2.0:
+    resolution: {integrity: sha512-7emyCsu1/xiBXgQZrscw/8KPRT44I4Yq9Pe6EGs3aPRTsWuggML1/1DTuZUuIaJPIm1FTDUVXl4x/yW8s0kQDQ==}
+    engines: {node: '>= 0.6.0'}
+    dev: false
+
+  /base64-arraybuffer/1.0.1:
+    resolution: {integrity: sha512-vFIUq7FdLtjZMhATwDul5RZWv2jpXQ09Pd6jcVEOvIsqCWTRFD/ONHNfyOS8dA/Ippi5dsIgpyKWKZaAKZltbA==}
+    engines: {node: '>= 0.6.0'}
+    dev: false
+
   /base64-js/1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
     dev: false
@@ -3813,6 +3847,7 @@ packages:
   /chokidar/3.5.2:
     resolution: {integrity: sha512-ekGhOnNVPgT77r4K/U3GDhu+FQ2S8TnK/s2KbIGXi0SZWuwkZ2QNyfWdZW+TVfn84DpEP7rLeCt2UI6bJ8GwbQ==}
     engines: {node: '>= 8.10.0'}
+    requiresBuild: true
     dependencies:
       anymatch: 3.1.2
       braces: 3.0.2
@@ -4265,6 +4300,12 @@ packages:
     dependencies:
       postcss: 7.0.36
       postcss-selector-parser: 5.0.0
+    dev: false
+
+  /css-line-break/2.0.1:
+    resolution: {integrity: sha512-gwKYIMUn7xodIcb346wgUhE2Dt5O1Kmrc16PWi8sL4FTfyDj8P5095rzH7+O8CTZudJr+uw2GCI/hwEkDJFI2w==}
+    dependencies:
+      base64-arraybuffer: 0.2.0
     dev: false
 
   /css-loader/4.3.0_webpack@4.44.2:
@@ -5820,6 +5861,7 @@ packages:
     resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
+    requiresBuild: true
     dev: false
     optional: true
 
@@ -6172,6 +6214,14 @@ packages:
       tapable: 1.1.3
       util.promisify: 1.0.0
       webpack: 4.44.2
+    dev: false
+
+  /html2canvas/1.3.2:
+    resolution: {integrity: sha512-4+zqv87/a1LsaCrINV69wVLGG8GBZcYBboz1JPWEgiXcWoD9kroLzccsBRU/L9UlfV2MAZ+3J92U9IQPVMDeSQ==}
+    engines: {node: '>=8.0.0'}
+    dependencies:
+      css-line-break: 2.0.1
+      text-segmentation: 1.0.2
     dev: false
 
   /htmlparser2/6.1.0:
@@ -7807,6 +7857,10 @@ packages:
     resolution: {integrity: sha1-sAqqVW3YtEVoFQ7J0blT8/kMu2E=}
     dev: false
 
+  /merge-images/2.0.0:
+    resolution: {integrity: sha512-bpI4j54n/Zl6ZTgxaR3xWou/lqI53RAAt8peXijW37BKqoON83LQ7XCZqtFiwzBfEXIws1isYyR06584yffAyA==}
+    dev: false
+
   /merge-stream/2.0.0:
     resolution: {integrity: sha512-abv/qOcuPfk3URPfDzmZU1LKmuw8kT+0nIHvKrKgFrwifol/doWcdA4ZqsWQ8ENrFKkd67Mfpo/LovbIUsbt3w==}
     dev: false
@@ -8148,6 +8202,7 @@ packages:
 
   /node-notifier/8.0.2:
     resolution: {integrity: sha512-oJP/9NAdd9+x2Q+rfphB2RJCHjod70RcRLjosiPMMu5gjIfwVnOUGq2nbTjTUbmy0DJ/tFIVT30+Qe3nzl4TJg==}
+    requiresBuild: true
     dependencies:
       growly: 1.3.0
       is-wsl: 2.2.0
@@ -9795,6 +9850,16 @@ packages:
       - webpack-plugin-serve
     dev: false
 
+  /react-webcam/6.0.0_react-dom@17.0.2+react@17.0.2:
+    resolution: {integrity: sha512-pw7067WYnDHRjAXYXrsLeig9/AAxCFDnnaEJzZ5ep6UZoYMqF4UNRtVkeTk0LotpwqT/c8vHisn/+QodNbUsQA==}
+    peerDependencies:
+      react: '>=15.3.0'
+      react-dom: '>=15.3.0'
+    dependencies:
+      react: 17.0.2
+      react-dom: 17.0.2_react@17.0.2
+    dev: false
+
   /react/17.0.2:
     resolution: {integrity: sha512-gnhPt75i/dq/z3/6q/0asP78D0u592D5L1pd7M8P+dck6Fu/jJeL6iVVK23fptSUZj8Vjf++7wXA8UNclGQcbA==}
     engines: {node: '>=0.10.0'}
@@ -11107,6 +11172,12 @@ packages:
       minimatch: 3.0.4
     dev: false
 
+  /text-segmentation/1.0.2:
+    resolution: {integrity: sha512-uTqvLxdBrVnx/CFQOtnf8tfzSXFm+1Qxau7Xi54j4OPTZokuDOX8qncQzrg2G8ZicAMOM8TgzFAYTb+AqNO4Cw==}
+    dependencies:
+      utrie: 1.0.1
+    dev: false
+
   /text-table/0.2.0:
     resolution: {integrity: sha1-f17oI66AUgfACvLfSoTsP8+lcLQ=}
     dev: false
@@ -11510,6 +11581,12 @@ packages:
     engines: {node: '>= 0.4.0'}
     dev: false
 
+  /utrie/1.0.1:
+    resolution: {integrity: sha512-JPaDXF3vzgZxfeEwutdGzlrNoVFL5UvZcbO6Qo9D4GoahrieUPoMU8GCpVpR7MQqcKhmShIh8VlbEN3PLM3EBg==}
+    dependencies:
+      base64-arraybuffer: 1.0.1
+    dev: false
+
   /uuid/3.4.0:
     resolution: {integrity: sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==}
     deprecated: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
@@ -11576,6 +11653,7 @@ packages:
 
   /watchpack-chokidar2/2.0.1:
     resolution: {integrity: sha512-nCFfBIPKr5Sh61s4LPpy1Wtfi0HE8isJ3d2Yb5/Ppw2P2B/3eVSEBjKfN0fmHJSK14+31KwMKmcrzs2GM4P0Ww==}
+    requiresBuild: true
     dependencies:
       chokidar: 2.1.8
     dev: false

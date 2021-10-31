@@ -10,7 +10,7 @@
 /* eslint-disable react/jsx-first-prop-new-line */
 /* eslint-disable func-names */
 /* eslint-disable no-console */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
@@ -22,9 +22,42 @@ import { FaceMesh } from "@mediapipe/face_mesh"; //New Face detect lib that we a
 import * as cam from "@mediapipe/camera_utils";
 import ModelStore from "../stores/ModelStore";
 import Webcam from "react-webcam";
+import mergeImages from "merge-images";
+import html2canvas from "html2canvas";
 
 const isVideoPlaying = (vid) =>
   !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
+
+function resizedataURL(datas, wantedWidth, wantedHeight) {
+  return new Promise(async function (resolve, reject) {
+    // We create an image to receive the Data URI
+    var img = document.createElement("img");
+
+    // When the event "onload" is triggered we can resize the image.
+    img.onload = function () {
+      // We create a canvas and get its context.
+      var canvas = document.createElement("canvas");
+      var ctx = canvas.getContext("2d");
+
+      // We set the dimensions at the wanted size.
+      canvas.width = wantedWidth;
+      canvas.height = wantedHeight;
+
+      // We resize the image with the canvas method drawImage();
+      ctx.translate(wantedWidth, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(this, 0, 0, wantedWidth, wantedHeight);
+
+      var dataURI = canvas.toDataURL();
+
+      // This is the return of the Promise
+      resolve(dataURI);
+    };
+
+    // We put the Data URI in the image's src attribute
+    img.src = datas;
+  });
+}
 
 //Input Video frame size
 // const VIDEO_WIDTH = 320;
@@ -51,12 +84,8 @@ export default function ThreeCanvas() {
   const [firstResize, setFirstResize] = useState(false);
 
   //let piviot=null;
-  const modelPaths = ModelStore.useState((state) => state.pairs).map(
-    (pair) => pair.model
-  );
-  const currentModelIndex = ModelStore.useState(
-    (state) => state.currentModelIndex
-  );
+  const modelPaths = ModelStore.useState((state) => state.pairs).map((pair) => pair.model);
+  const currentModelIndex = ModelStore.useState((state) => state.currentModelIndex);
 
   // load all the models first
   useEffect(() => {
@@ -127,7 +156,7 @@ export default function ThreeCanvas() {
 
       renderer.physicallyCorrectLights = true;
       // renderer.outputEncoding = THREE.sRGBEncoding;
-      renderer.setClearColor(0x000000, 0);
+      renderer.setClearColor(0x0000ff, 0);
 
       renderer.setPixelRatio(2);
 
@@ -178,10 +207,7 @@ export default function ThreeCanvas() {
       // setVIDEO_HEIGHT(element.clientHeight);
 
       //Init webcam
-      if (
-        typeof videoRef.current !== "undefined" &&
-        videoRef.current !== null
-      ) {
+      if (typeof videoRef.current !== "undefined" && videoRef.current !== null) {
         web_camera = new cam.Camera(videoRef.current.video, {
           onFrame: async () => {
             var canvas = document.createElement("canvas");
@@ -236,10 +262,7 @@ export default function ThreeCanvas() {
 
         //Checks for face in the webcam
 
-        if (
-          results.multiFaceLandmarks &&
-          results.multiFaceLandmarks.length > 0
-        ) {
+        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
           if (currentModelRef.current !== null) {
             if (!firstResize) {
               setFirstResize(true);
@@ -294,45 +317,26 @@ export default function ThreeCanvas() {
 
               //Calculation of Yaw angle(face turn left and right)
               let righteyep = results.multiFaceLandmarks[0][33];
-              var V2yaw = new THREE.Vector3(
-                righteyep.x,
-                righteyep.y,
-                righteyep.z
-              );
+              var V2yaw = new THREE.Vector3(righteyep.x, righteyep.y, righteyep.z);
 
               const noseTop = results.multiFaceLandmarks[0][8];
               const RightEyeEnd = results.multiFaceLandmarks[0][46];
               const yawangle =
-                Math.atan2(
-                  noseTop.z - RightEyeEnd.z,
-                  noseTop.x - RightEyeEnd.x
-                ) + 0.296706;
+                Math.atan2(noseTop.z - RightEyeEnd.z, noseTop.x - RightEyeEnd.x) + 0.296706;
 
               model.rotation.y = yawangle; //yaw
   // console.log(radians_to_degrees(yawangle));
               //Calculation of Roll angle(face tilt left and right)
               const zangle =
               1.88496-
-                Math.atan2(
-                  noseBottom.y - betweenEyes.y,
-                  noseBottom.x - betweenEyes.x
-                ) *
-                  1.2;
+                Math.atan2(noseBottom.y - betweenEyes.y, noseBottom.x - betweenEyes.x) * 1.2;
 
               model.rotation.z = zangle; //roll
               // console.log(radians_to_degrees(zangle));
               //Scaling of glass
               {
-                var noseBottom3 = new THREE.Vector3(
-                  noseBottom.x,
-                  noseBottom.y,
-                  noseBottom.z
-                );
-                var betweenEyes3 = new THREE.Vector3(
-                  betweenEyes.x,
-                  betweenEyes.y,
-                  betweenEyes.z
-                );
+                var noseBottom3 = new THREE.Vector3(noseBottom.x, noseBottom.y, noseBottom.z);
+                var betweenEyes3 = new THREE.Vector3(betweenEyes.x, betweenEyes.y, betweenEyes.z);
                 let distanceScale = noseBottom3.distanceTo(betweenEyes3);
                 distanceScale *= 9;
 
@@ -355,10 +359,48 @@ export default function ThreeCanvas() {
     methodF();
   }, []);
 
-  function saveScreenshot() {
-    const strMime = "image/jpeg";
-    const imgData = rendererRef.current.domElement.toDataURL(strMime);
-    return imgData;
+  const capture = useCallback(() => {
+    return videoRef.current.getScreenshot();
+  }, [videoRef]);
+
+  async function saveScreenshot() {
+    const canvas = document.createElement("canvas"); // declare a canvas element in your html
+    const ctx = canvas.getContext("2d");
+    const el = rendererRef.current.domElement;
+    const w = el.clientWidth;
+    const h = el.clientHeight;
+    const v = videoRef.current.video;
+    canvas.width = w;
+    canvas.height = h;
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(v, -w / 5.5, 0, w, h);
+    v.style.backgroundImage = `url(${canvas.toDataURL()})`; // here is the magic
+    // v.style.backgroundSize = "cover";
+    ctx.clearRect(0, 0, w, h); // clean the canvas
+
+    const ssCanvas = await html2canvas(document.getElementById("camdiv"), {
+      backgroundColor: null,
+      scale: 2,
+    });
+    return ssCanvas.toDataURL("image/png");
+
+    // const strMime = "image/png";
+    // const el = rendererRef.current.domElement;
+    // const webcamImage = await resizedataURL(capture(), el.clientWidth * 2, el.clientHeight * 2);
+    // const threeImage = rendererRef.current.domElement.toDataURL(strMime);
+
+    // const img = await mergeImages([
+    // {
+    // src: webcamImage,
+    // },
+    // {
+    // src: threeImage,
+    // x: canvasLeft,
+    // y: canvasTop,
+    // },
+    // ]);
+
+    // return img;
   }
   function radians_to_degrees(radians)
   {
