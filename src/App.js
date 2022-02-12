@@ -1,14 +1,10 @@
 import { useState } from "react";
 import styled, { createGlobalStyle } from "styled-components";
-
 import GlassesCard from "./components/GlassesCard";
 import ImageCard from "./components/ImageCard";
 import CameraFrame from "./components/CameraFrame";
-
 import ModelStore from "./stores/ModelStore";
-
 import useWindowSize from "./lib/useWindowSize";
-
 import backgroundImage from "./assets/images/468 1.png";
 
 const GlobalStyle = createGlobalStyle`
@@ -90,7 +86,7 @@ function App() {
     <>
       <GlobalStyle />
       <div className="App">
-        <div className="container mt-3">
+        <div className=" mt-3">
           <div className="row">
             <Header>
               Find your style, <span style={{ color: "red" }}>Try it on!</span>
