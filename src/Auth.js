@@ -8,14 +8,17 @@ import { BrowserRouter as Router, Routes, Route, useParams } from "react-router-
 
 const Auth = () => {
     var isAuth = localStorage.getItem("isAuth");
-    if (isAuth !== null && isAuth !== undefined && isAuth !== "") {
-        isAuth = true;
-    }
+    // if (isAuth !== null && isAuth !== undefined && isAuth !== "") {
+    //     isAuth = true;
+    // }
     return (
-        <Routes>
-            <Route exact path="/login" element={<Signin />} />
-            <Route path="*" element={<ProtectedRoute isAuth={isAuth} Component={App} />} />
-        </Routes>
+        <>
+            {isAuth === "true" ? <App /> : <Signin />}
+        </>
+        // <Routes>
+        //     <Route exact path="/" element={<Signin />} />
+        //     <Route path="/home" element={<ProtectedRoute isAuth={isAuth} Component={App} />} />
+        // </Routes>
     )
 
 };

@@ -14,9 +14,10 @@ const Signin = () => {
     let history = useNavigate();
     const onSuccess = response => {
         console.log(response);
-        isAuth = response.tokenObj.access_token;
+        isAuth = true;
         localStorage.setItem('isAuth', isAuth);
-        history('/home');
+        // history('/home')
+        window.location.reload();
     }
     const onFailureSuccess = response => {
         alert('Only Secomind Users are Allowed');

@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Route, Navigate } from 'react-router-dom'
 
+var auth;
 const ProtectedRoute = ({ Component, isAuth }) => {
-    const auth = isAuth;
-    return auth ? <Component /> : <Navigate to="/login" />
+    isAuth !== null ? auth = true : auth = false;
+    return isAuth ? <Component /> : <Navigate to="/" />
 }
 
 export default ProtectedRoute
