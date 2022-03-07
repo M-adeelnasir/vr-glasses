@@ -302,6 +302,9 @@ export default function ThreeCanvas() {
               else if(yawangle > 0.2)  {
                 model.children[1].visible = false;
                 model.children[2].visible = true;                
+              }else{
+                model.children[1].visible = true;
+                model.children[2].visible = true;  
               }
               //Calculation of Roll angle(face tilt left and right)
               const zangle =
