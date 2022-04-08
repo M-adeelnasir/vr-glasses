@@ -13,9 +13,8 @@ const Auth = () => {
     // }
     return (
         <>
-            {/* {isAuth === "true" ? <App /> : <Signin />} */
-            }
-            <App />
+            {isAuth === "true" ? <App /> : <Signin />}
+            {/* <App /> */}
         </>
         // <Routes>
         //     <Route exact path="/" element={<Signin />} />
