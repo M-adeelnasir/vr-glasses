@@ -1,5 +1,5 @@
-import styled from "styled-components";
-import useWindowSize from "../lib/useWindowSize";
+import styled from 'styled-components';
+import useWindowSize from '../lib/useWindowSize';
 
 const Container = styled.div`
   border-radius: 10px;
@@ -15,9 +15,15 @@ const Container = styled.div`
 
 const PriceText = styled.p`
   font-weight: bold;
-  font-size: 1.8em;
-  text-align: right;
+  font-size: 1.9em;
+  text-align: left;
   padding: 0px;
+  margin: 0px;
+`;
+const DescriptionText = styled.p`
+  font-size: 0.8em;
+  text-align: left;
+  padding: 10px;
   margin: 0px;
 `;
 
@@ -35,14 +41,17 @@ export default function GlassesCard({ image, name, price, ...props }) {
         </div>
         <div className="col">
           <div className="h-100 d-flex justify-content-end">
-            <PriceText style={{}} className="align-self-center">
-              {price}
-            </PriceText>
+            <PriceText className="align-self-center">{price}</PriceText>
           </div>
         </div>
       </div>
       <div className="row text-center">
-        <p className="mt-4">{windowWidth <= 1200 ? name.split(" ")[0] : name}</p>
+        <p className="mt-4" style={{ fontSize: '1.2em' }}>
+          {windowWidth <= 1200 ? name.split(' ')[0] : name}
+        </p>
+      </div>
+      <div>
+        <DescriptionText>{props.description}</DescriptionText>
       </div>
     </Container>
   );

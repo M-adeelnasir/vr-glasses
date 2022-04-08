@@ -10,21 +10,24 @@
 /* eslint-disable react/jsx-first-prop-new-line */
 /* eslint-disable func-names */
 /* eslint-disable no-console */
-import { useEffect, useRef, useState } from "react";
-import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { useEffect, useRef, useState } from 'react';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 // import * as facemesh from "@tensorflow-models/face-landmarks-detection";
 // import * as tf from "@tensorflow/tfjs";
 // import * as Facemesh from "@mediapipe/face_mesh";
 
-import { FaceMesh } from "@mediapipe/face_mesh";//New Face detect lib that we are using.
-import * as cam from "@mediapipe/camera_utils";
-import ModelStore from "../stores/ModelStore";
-import Webcam from "react-webcam";
+import { FaceMesh } from '@mediapipe/face_mesh'; //New Face detect lib that we are using.
+import * as cam from '@mediapipe/camera_utils';
+import ModelStore from '../stores/ModelStore';
+import Webcam from 'react-webcam';
 
 const isVideoPlaying = (vid) =>
   !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
+
+const mapVal = (value, start1, stop1, start2, stop2) =>
+  start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
 
 //Input Video frame size
 // const VIDEO_WIDTH = 320;
@@ -46,15 +49,17 @@ export default function ThreeCanvas() {
   //To move canvas based on glass position
   const [canvasLeft, setCanvasLeft] = useState(0);
   const [canvasTop, setCanvasTop] = useState(0);
+
+  const [faceCenter, setFaceCenter] = useState();
+
   const [VIDEO_WIDTH, setVIDEO_WIDTH] = useState(640);
   const [VIDEO_HEIGHT, setVIDEO_HEIGHT] = useState(480);
   const [firstResize, setFirstResize] = useState(false);
 
-  var positionBuff=0;
-  var rotationPBuff=0;
-  var rotationRBuff=0;
-  var rotationYBuff=0;
-
+  var positionBuff = 0;
+  var rotationPBuff = 0;
+  var rotationRBuff = 0;
+  var rotationYBuff = 0;
 
   //let piviot=null;
   const modelPaths = ModelStore.useState((state) => state.pairs).map(
@@ -102,7 +107,7 @@ export default function ThreeCanvas() {
       const model = models[currentModelIndex];
 
       let piviot = new THREE.Group();
-      piviot.name = "parentPiviot";
+      piviot.name = 'parentPiviot';
       piviot.add(model);
       currentModelRef.current = piviot;
       //  setPiviot(piviotObj)
@@ -117,10 +122,10 @@ export default function ThreeCanvas() {
       }
       // first, we clear the previous scene
       var element = document.getElementById('camdiv');
-      canvasRef.current.innerHTML = "";
+      canvasRef.current.innerHTML = '';
       // setVIDEO_WIDTH(element.clientWidth);
       // setVIDEO_HEIGHT(element.clientHeight)
-      console.log(element.clientHeight,element.clientWidth);
+      console.log(element.clientHeight, element.clientWidth);
       // init renderer
       rendererRef.current = new THREE.WebGLRenderer({
         preserveDrawingBuffer: true,
@@ -128,15 +133,12 @@ export default function ThreeCanvas() {
         alpha: true,
       });
       const renderer = rendererRef.current;
-      renderer.setSize(
-        element.clientWidth,
-        element.clientHeight
-      );
-      renderer.domElement.style.transform = " scaleX(-1)";
+      renderer.setSize(element.clientWidth, element.clientHeight);
+      renderer.domElement.style.transform = ' scaleX(-1)';
 
       renderer.physicallyCorrectLights = true;
       // renderer.outputEncoding = THREE.sRGBEncoding;
-      renderer.setClearColor(0x000000, 0);
+      renderer.setClearColor(0x00000000, 0);
 
       renderer.setPixelRatio(2);
 
@@ -151,17 +153,19 @@ export default function ThreeCanvas() {
       const resizeCanvas = () => {
         const wrapperHeight = canvasRef.current.clientHeight;
 
-        const aspect =    videoRef.current.video.videoWidth /   videoRef.current.video.videoHeight;
+        const aspect =
+          videoRef.current.video.videoWidth /
+          videoRef.current.video.videoHeight;
 
         renderer.setSize(
           videoRef.current.video.videoWidth,
-          videoRef.current.video.videoHeight        );
+          videoRef.current.video.videoHeight
+        );
         camera.aspect = aspect;
         camera.updateProjectionMatrix();
       };
 
-      window.addEventListener("resize", resizeCanvas);
-     
+      window.addEventListener('resize', resizeCanvas);
 
       // environment
       const light = new THREE.HemisphereLight(0xffffff, 0xffffbb, 1);
@@ -184,65 +188,73 @@ export default function ThreeCanvas() {
       });
       aiModel.onResults(onResults);
 
-      canvasRef.current.height=element.clientHeight;
-      canvasRef.current.width=element.clientWidth;
-    // setVIDEO_WIDTH( element.clientWidth);
-    // setVIDEO_HEIGHT(element.clientHeight);
- 
+      canvasRef.current.height = element.clientHeight;
+      canvasRef.current.width = element.clientWidth;
+      // setVIDEO_WIDTH( element.clientWidth);
+      // setVIDEO_HEIGHT(element.clientHeight);
+
       //Init webcam
       if (
-        typeof videoRef.current !== "undefined" &&
+        typeof videoRef.current !== 'undefined' &&
         videoRef.current !== null
       ) {
         web_camera = new cam.Camera(videoRef.current.video, {
           onFrame: async () => {
             await aiModel.send({ image: videoRef.current.video });
           },
-          width:  VIDEO_WIDTH,
-          height:VIDEO_HEIGHT,
+          width: VIDEO_WIDTH,
+          height: VIDEO_HEIGHT,
         });
         web_camera.start();
       }
-     
+
       //This function occurs for each detection results given by aiModel.
       function onResults(results) {
-   
         var element = document.getElementById('camdiv');
 
-      console.log(element.clientHeight,element.clientWidth);
+        console.log(element.clientHeight, element.clientWidth);
 
-      //Checks for face in the webcam
+        //Checks for face in the webcam
 
         if (
           results.multiFaceLandmarks &&
           results.multiFaceLandmarks.length > 0
         ) {
           if (currentModelRef.current !== null) {
-            if(!firstResize){
+            if (!firstResize) {
               setFirstResize(true);
               resizeCanvas();
             }
-            let bufferPostVal ;
-            let offsetLeft= videoRef.current.video.clientWidth-videoRef.current.video.videoWidth;
-            offsetLeft=offsetLeft/2;
-            let offsetTop= videoRef.current.video.clientHeight-videoRef.current.video.videoHeight;
-            offsetTop=offsetTop/2;
+            let bufferPostVal;
+            let offsetLeft =
+              videoRef.current.video.clientWidth -
+              videoRef.current.video.videoWidth;
+            offsetLeft = offsetLeft / 2;
+            let offsetTop =
+              videoRef.current.video.clientHeight -
+              videoRef.current.video.videoHeight;
+            offsetTop = offsetTop / 2;
 
-            offsetLeft+=videoRef.current.video.offsetLeft;
-            offsetTop+= videoRef.current.video.offsetTop;
+            offsetLeft += videoRef.current.video.offsetLeft;
+            offsetTop += videoRef.current.video.offsetTop;
             const piviot = currentModelRef.current;
             const model = piviot.children[0];
             //console.log(model);
             model.scale.setScalar(1);
-            let vvheight= videoRef.current.video.videoHeight;
-            vvheight-=offsetTop;
+            let vvheight = videoRef.current.video.videoHeight;
+            vvheight -= offsetTop;
             // Position
             {
-              let center8 = results.multiFaceLandmarks[0][8];// Forehead center point
-              setCanvasLeft((-center8.x * videoRef.current.video.videoWidth + videoRef.current.video.videoWidth / 2)+offsetLeft);
-              let top = center8.y *vvheight - vvheight / 2;
-             // console.log((positionBuff-top).abs());
-              if((positionBuff-top) > 0.05){
+              let center8 = results.multiFaceLandmarks[0][8]; // Forehead center point
+              setFaceCenter(center8);
+              setCanvasLeft(
+                -center8.x * videoRef.current.video.videoWidth +
+                  videoRef.current.video.videoWidth / 2 +
+                  offsetLeft
+              );
+              let top = center8.y * vvheight - vvheight / 2;
+              // console.log((positionBuff-top).abs());
+              if (positionBuff - top > 0.05) {
                 setCanvasTop(top);
               }
               positionBuff = top;
@@ -253,13 +265,13 @@ export default function ThreeCanvas() {
               const noseBottom = results.multiFaceLandmarks[0][164];
               const betweenEyes = results.multiFaceLandmarks[0][168];
 
-              let centerpoint = results.multiFaceLandmarks[0][8];// Forehead center point
+              let centerpoint = results.multiFaceLandmarks[0][8]; // Forehead center point
               var V2 = new THREE.Vector3(
                 centerpoint.x,
                 centerpoint.y,
                 centerpoint.z
               );
-              
+
               //Calculation of Pitch angle(face up and down)
               const pitchangle = Math.atan2(
                 noseBottom.z - betweenEyes.z,
@@ -267,11 +279,11 @@ export default function ThreeCanvas() {
               );
               //console.log(rotationPBuff - pitchangle);
               //if((rotationPBuff - pitchangle)>0.05){
-                model.rotation.x = pitchangle; //pitch
+              model.rotation.x = pitchangle; //pitch
               //   rotationPBuff = pitchangle;
               // }
               // console.log(radians_to_degrees(pitchangle));
-              
+
               //Calculation of Yaw angle(face turn left and right)
               let righteyep = results.multiFaceLandmarks[0][33];
               var V2yaw = new THREE.Vector3(
@@ -290,21 +302,18 @@ export default function ThreeCanvas() {
 
               //if((yawangle - rotationYBuff).abs> 0.005)
               {
-              model.rotation.y = yawangle; //yaw
-              rotationYBuff = yawangle;
+                model.rotation.y = yawangle; //yaw
+                rotationYBuff = yawangle;
               }
-              if(yawangle<-0.2)
-              {
+              if (yawangle < -0.2) {
                 model.children[1].visible = true;
                 model.children[2].visible = false;
-
-              }
-              else if(yawangle > 0.2)  {
+              } else if (yawangle > 0.2) {
                 model.children[1].visible = false;
-                model.children[2].visible = true;                
-              }else{
+                model.children[2].visible = true;
+              } else {
                 model.children[1].visible = true;
-                model.children[2].visible = true;  
+                model.children[2].visible = true;
               }
               //Calculation of Roll angle(face tilt left and right)
               const zangle =
@@ -314,7 +323,7 @@ export default function ThreeCanvas() {
                   noseBottom.x - betweenEyes.x
                 ) *
                   1.2;
-              
+
               //if((rotationRBuff - zangle)>0.25){
               model.rotation.z = zangle; //roll
               // rotationRBuff = zangle;
@@ -354,52 +363,76 @@ export default function ThreeCanvas() {
     methodF();
   }, []);
 
-  function saveScreenshot() {
-    const strMime = "image/jpeg";
-    const imgData = rendererRef.current.domElement.toDataURL(strMime);
-    return imgData;
+  async function saveScreenshot() {
+    const ssCanvas = document.createElement('canvas');
+
+    const width = videoRef.current.video.videoWidth;
+    const height = videoRef.current.video.videoHeight;
+
+    ssCanvas.width = width;
+    ssCanvas.height = height;
+    const ssContext = ssCanvas.getContext('2d');
+
+    ssContext.translate(width, 0);
+    ssContext.scale(-1, 1);
+
+    ssContext.drawImage(videoRef.current.video, 0, 0);
+
+    if (faceCenter) {
+      const gx = faceCenter.x * width - width / 2;
+      const gy = faceCenter.y * height - height / 2;
+      ssContext.drawImage(
+        rendererRef.current.domElement,
+        gx,
+        gy,
+        width,
+        height
+      );
+    }
+
+    return ssCanvas.toDataURL('image/png');
   }
 
   // the div's height is 100% - the bottom overlay height
   const Component = (
     <>
-       <div id="camdiv" className="row" style={{ height: "480px" }}>
-
-      <Webcam
-        ref={videoRef}
-        name="webcame"
-        id="webcamid"
-        mirrored
-        style={{
-          position: "absolute",
-          marginLeft: "auto",
-          marginRight: "auto",
-          textAlign: "center",
-          objectFit: "cover",
-          paddingLeft: "0px",
-          paddingRight: "0px",
-          left: 0,
-          right: 0,
-          width: VIDEO_WIDTH,
-          height: VIDEO_HEIGHT,
-        }}
-      />
-      <div
-      name="threed"
-        ref={canvasRef}
-        style={{
-          paddingLeft: "0px",
-          paddingRight: "0px",
-          // opacity: 0.3,
-          position: "absolute",
-          left: canvasLeft,
-          top: canvasTop,
-          right: 0,
-          width:VIDEO_WIDTH,
-          height:VIDEO_HEIGHT,
-        }}
-      />
-         </div>
+      <div id="camdiv" className="row" style={{ height: '480px' }}>
+        <Webcam
+          ref={videoRef}
+          name="webcame"
+          id="webcamid"
+          screenshotFormat="image/jpeg"
+          mirrored
+          style={{
+            position: 'absolute',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            textAlign: 'center',
+            objectFit: 'cover',
+            paddingLeft: '0px',
+            paddingRight: '0px',
+            left: 0,
+            right: 0,
+            width: VIDEO_WIDTH,
+            height: VIDEO_HEIGHT,
+          }}
+        />
+        <div
+          name="threed"
+          ref={canvasRef}
+          style={{
+            paddingLeft: '0px',
+            paddingRight: '0px',
+            // opacity: 0.3,
+            position: 'absolute',
+            left: canvasLeft,
+            top: canvasTop,
+            right: 0,
+            width: VIDEO_WIDTH,
+            height: VIDEO_HEIGHT,
+          }}
+        />
+      </div>
     </>
   );
 
