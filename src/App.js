@@ -101,7 +101,7 @@ function App() {
                   <GlassesCard
                     key={index}
                     image={img}
-                    name={getNameFromImg(img)}
+                    name={"Ray-Ban Sunglasses black"}
                     price="$99"
                     description="Three's a crowd. And who doesn't enjoy a little golden ear party? One wasn't enough, two needed a boost, but three felt right. Throw your hair up with this triple threat ear stack, made from our 100% sustainable recycled gold, in Vermeil only."
                     style={currentModelIndex === index ? { border: "1px solid blue" } : null}
