@@ -22,6 +22,7 @@ import { FaceMesh } from '@mediapipe/face_mesh'; //New Face detect lib that we a
 import * as cam from '@mediapipe/camera_utils';
 import ModelStore from '../stores/ModelStore';
 import Webcam from 'react-webcam';
+import VideoBackground from '../lib/videobg';
 
 const isVideoPlaying = (vid) =>
   !!(vid.currentTime > 0 && !vid.paused && !vid.ended && vid.readyState > 2);
@@ -126,27 +127,46 @@ export default function ThreeCanvas() {
       // setVIDEO_WIDTH(element.clientWidth);
       // setVIDEO_HEIGHT(element.clientHeight)
       console.log(element.clientHeight, element.clientWidth);
+
+
       // init renderer
       rendererRef.current = new THREE.WebGLRenderer({
+
+        //  canvas: canvasRef,
+        devicePixelRation: window.devicePixelRatio || 1,
         preserveDrawingBuffer: true,
         antialias: true,
         alpha: true,
       });
       const renderer = rendererRef.current;
-      renderer.setSize(element.clientWidth, element.clientHeight);
+      //     renderer.setSize(element.clientWidth, element.clientHeight);
+      renderer.setSize(canvasRef.current.clientWidth, canvasRef.current.clientHeight);
       renderer.domElement.style.transform = ' scaleX(-1)';
 
       renderer.physicallyCorrectLights = true;
-      // renderer.outputEncoding = THREE.sRGBEncoding;
+     // renderer.outputEncoding = THREE.sRGBEncoding;
       renderer.setClearColor(0x00000000, 0);
 
-      renderer.setPixelRatio(2);
+      //renderer.setPixelRatio(2);
 
       sceneRef.current = new THREE.Scene();
       const scene = sceneRef.current;
 
-      const camera = new THREE.PerspectiveCamera(75);
-      camera.position.set(0, 0, 50);
+      // const camera = new THREE.PerspectiveCamera(75);
+      // camera.position.set(0, 0,0);
+
+      const camera = new THREE.OrthographicCamera(
+        - renderer.domElement.width / 2,
+        renderer.domElement.width / 2,
+        renderer.domElement.height / 2,
+        - renderer.domElement.height / 2,
+        -2000,
+        2000
+      )
+      camera.position.z = 2
+
+
+      let videoBg = new VideoBackground(scene, VIDEO_WIDTH, VIDEO_HEIGHT);
 
       canvasRef.current.appendChild(renderer.domElement);
 
@@ -202,18 +222,85 @@ export default function ThreeCanvas() {
           onFrame: async () => {
             await aiModel.send({ image: videoRef.current.video });
           },
-          width: VIDEO_WIDTH,
-          height: VIDEO_HEIGHT,
+          width: 640,
+          height: 480,
         });
         web_camera.start();
       }
+
+
+      function scaleLandmark(landmark, width, height) {
+        let { x, y, z } = landmark;
+        return {
+          ...landmark,
+          x: x * width,
+          y: y * height,
+          z: z * width,
+        }
+      }
+
+
+      function transformLandmarks(landmarks) {
+        if (!landmarks) {
+          return landmarks;
+        }
+
+        let hasVisiblity = !!landmarks.find(l => l.visibility);
+
+        let minZ = 1e-4;
+
+        // currently mediapipe facemesh js
+        // has visibility set to undefined
+        // so we use a heuristic to set z position of facemesh
+        if (hasVisiblity) {
+          landmarks.forEach(landmark => {
+            let { z, visibility } = landmark;
+            z = -z;
+            if (z < minZ && visibility) {
+              minZ = z
+            }
+          });
+        } else {
+          minZ = Math.max(-landmarks[234].z, -landmarks[454].z);
+        }
+
+        return landmarks.map(landmark => {
+          let { x, y, z } = landmark;
+          return {
+            x: -0.5 + x,
+            y: 0.5 - y,
+            z: -z - minZ,
+            visibility: landmark.visibility,
+          }
+        });
+      }
+
+      function updateCamera() {
+
+
+        // camera need to be adjusted according to
+        // renderer dimensions
+        camera.aspect = VIDEO_WIDTH / VIDEO_HEIGHT;
+        if (camera.type == 'OrthographicCamera') {
+          camera.top = VIDEO_HEIGHT / 2
+          camera.bottom = -VIDEO_HEIGHT / 2
+          camera.left = -VIDEO_WIDTH / 2
+          camera.right = VIDEO_WIDTH / 2
+        } else {
+          //  this.camera.position.z = cameraDistance(this.videoHeight, this.fov);
+        }
+        camera.updateProjectionMatrix();
+      }
+
+      updateCamera();
+
 
       //This function occurs for each detection results given by aiModel.
       function onResults(results) {
         var element = document.getElementById('camdiv');
 
         console.log(element.clientHeight, element.clientWidth);
-
+        videoBg.setImage(results.image);
         //Checks for face in the webcam
 
         if (
@@ -221,132 +308,88 @@ export default function ThreeCanvas() {
           results.multiFaceLandmarks.length > 0
         ) {
           if (currentModelRef.current !== null) {
-            if (!firstResize) {
-              setFirstResize(true);
-              resizeCanvas();
-            }
-            let bufferPostVal;
-            let offsetLeft =
-              videoRef.current.video.clientWidth -
-              videoRef.current.video.videoWidth;
-            offsetLeft = offsetLeft / 2;
-            let offsetTop =
-              videoRef.current.video.clientHeight -
-              videoRef.current.video.videoHeight;
-            offsetTop = offsetTop / 2;
+            // if (!firstResize) {
+            //   setFirstResize(true);
+            //   resizeCanvas();
+            // }
 
-            offsetLeft += videoRef.current.video.offsetLeft;
-            offsetTop += videoRef.current.video.offsetTop;
+
+            let multiFaceLandmarks = transformLandmarks(results.multiFaceLandmarks[0]);
+            let landmarks = multiFaceLandmarks;
+            // let width =  element.clientWidth;
+            // let height = element.clientHeight;
+
+            let width = VIDEO_WIDTH;
+            let height = VIDEO_HEIGHT;
+
+
+            let midEyes = scaleLandmark(landmarks[168], width, height);
+            let leftEyeInnerCorner = scaleLandmark(landmarks[463], width, height);
+            let rightEyeInnerCorner = scaleLandmark(landmarks[243], width, height);
+            let noseBottom = scaleLandmark(landmarks[2], width, height);
+            let leftEyeUpper1 = scaleLandmark(landmarks[446], width, height);
+            let rightEyeUpper1 = scaleLandmark(landmarks[226], width, height);
+
+            // position
+
             const piviot = currentModelRef.current;
             const model = piviot.children[0];
-            //console.log(model);
-            model.scale.setScalar(1);
-            let vvheight = videoRef.current.video.videoHeight;
-            vvheight -= offsetTop;
-            // Position
-            {
-              let center8 = results.multiFaceLandmarks[0][8]; // Forehead center point
-              setFaceCenter(center8);
-              setCanvasLeft(
-                -center8.x * videoRef.current.video.videoWidth +
-                  videoRef.current.video.videoWidth / 2 +
-                  offsetLeft
-              );
-              let top = center8.y * vvheight - vvheight / 2;
-              // console.log((positionBuff-top).abs());
-              if (positionBuff - top > 0.05) {
-                setCanvasTop(top);
-              }
-              positionBuff = top;
-            }
+            //  model.scale.setScalar(1);
+            model.position.set(
+              midEyes.x,
+              midEyes.y,
+              midEyes.z,
+            )
 
-            // Rotation
-            {
-              const noseBottom = results.multiFaceLandmarks[0][164];
-              const betweenEyes = results.multiFaceLandmarks[0][168];
+            // scale to make glasses
+            // as wide as distance between
+            // left eye corner and right eye corner
+            const eyeDist = Math.sqrt(
+              (leftEyeUpper1.x - rightEyeUpper1.x) ** 2 +
+              (leftEyeUpper1.y - rightEyeUpper1.y) ** 2 +
+              (leftEyeUpper1.z - rightEyeUpper1.z) ** 2
+            );
+            // 1.4 is width of 3d model of glasses
+            const scale = eyeDist / 1.4;
 
-              let centerpoint = results.multiFaceLandmarks[0][8]; // Forehead center point
-              var V2 = new THREE.Vector3(
-                centerpoint.x,
-                centerpoint.y,
-                centerpoint.z
-              );
+            model.scale.set(scale, scale, scale);
 
-              //Calculation of Pitch angle(face up and down)
-              const pitchangle = Math.atan2(
-                noseBottom.z - betweenEyes.z,
-                noseBottom.y - betweenEyes.y
-              );
-              //console.log(rotationPBuff - pitchangle);
-              //if((rotationPBuff - pitchangle)>0.05){
-              model.rotation.x = pitchangle; //pitch
-              //   rotationPBuff = pitchangle;
-              // }
-              // console.log(radians_to_degrees(pitchangle));
+            // use two vectors to rotate glasses
+            // Vertical Vector from midEyes to noseBottom
+            // is used for calculating rotation around x and z axis
+            // Horizontal Vector from leftEyeCorner to rightEyeCorner
+            // us use to calculate rotation around y axis
+            let upVector = new THREE.Vector3(
+              midEyes.x - noseBottom.x,
+              midEyes.y - noseBottom.y,
+              midEyes.z - noseBottom.z,
+            ).normalize();
 
-              //Calculation of Yaw angle(face turn left and right)
-              let righteyep = results.multiFaceLandmarks[0][33];
-              var V2yaw = new THREE.Vector3(
-                righteyep.x,
-                righteyep.y,
-                righteyep.z
-              );
+            let sideVector = new THREE.Vector3(
+              leftEyeInnerCorner.x - rightEyeInnerCorner.x,
+              leftEyeInnerCorner.y - rightEyeInnerCorner.y,
+              leftEyeInnerCorner.z - rightEyeInnerCorner.z,
+            ).normalize();
 
-              const noseTop = results.multiFaceLandmarks[0][8];
-              const RightEyeEnd = results.multiFaceLandmarks[0][46];
-              const yawangle =
-                Math.atan2(
-                  noseTop.z - RightEyeEnd.z,
-                  noseTop.x - RightEyeEnd.x
-                ) + 0.296706;
+            let zRot = (new THREE.Vector3(1, 0, 0)).angleTo(
+              upVector.clone().projectOnPlane(
+                new THREE.Vector3(0, 0, 1)
+              )
+            ) - (Math.PI / 2)
 
-              //if((yawangle - rotationYBuff).abs> 0.005)
-              {
-                model.rotation.y = yawangle; //yaw
-                rotationYBuff = yawangle;
-              }
-              if (yawangle < -0.2) {
-                model.children[1].visible = true;
-                model.children[2].visible = false;
-              } else if (yawangle > 0.2) {
-                model.children[1].visible = false;
-                model.children[2].visible = true;
-              } else {
-                model.children[1].visible = true;
-                model.children[2].visible = true;
-              }
-              //Calculation of Roll angle(face tilt left and right)
-              const zangle =
-                1.93732 -
-                Math.atan2(
-                  noseBottom.y - betweenEyes.y,
-                  noseBottom.x - betweenEyes.x
-                ) *
-                  1.2;
+            let xRot = (Math.PI / 2) - (new THREE.Vector3(0, 0, 1)).angleTo(
+              upVector.clone().projectOnPlane(
+                new THREE.Vector3(1, 0, 0)
+              )
+            );
 
-              //if((rotationRBuff - zangle)>0.25){
-              model.rotation.z = zangle; //roll
-              // rotationRBuff = zangle;
-              // }
+            let yRot = (
+              new THREE.Vector3(sideVector.x, 0, sideVector.z)
+            ).angleTo(new THREE.Vector3(0, 0, 1)) - (Math.PI / 2);
 
-              //Scaling of glass
-              {
-                var noseBottom3 = new THREE.Vector3(
-                  noseBottom.x,
-                  noseBottom.y,
-                  noseBottom.z
-                );
-                var betweenEyes3 = new THREE.Vector3(
-                  betweenEyes.x,
-                  betweenEyes.y,
-                  betweenEyes.z
-                );
-                let distanceScale = noseBottom3.distanceTo(betweenEyes3);
-                distanceScale *= 9;
+            model.rotation.set(xRot, yRot, zRot);
 
-                model.scale.setScalar(distanceScale);
-              }
-            }
+
           }
         }
       }
@@ -354,7 +397,7 @@ export default function ThreeCanvas() {
       //Render function
       function animate() {
         requestAnimationFrame(animate);
-
+        videoBg.update();
         renderer.render(scene, camera);
       }
 
@@ -376,7 +419,10 @@ export default function ThreeCanvas() {
     ssContext.translate(width, 0);
     ssContext.scale(-1, 1);
 
-    ssContext.drawImage(videoRef.current.video, 0, 0);
+    var img = document.getElementById("threejsCanvas");
+
+    ssContext.drawImage(img.children[0], 0, 0);
+    //ssContext.drawImage(videoRef.current.video, 0, 0);
 
     if (faceCenter) {
       const gx = faceCenter.x * width - width / 2;
@@ -420,6 +466,7 @@ export default function ThreeCanvas() {
         <div
           name="threed"
           ref={canvasRef}
+          id="threejsCanvas"
           style={{
             paddingLeft: '0px',
             paddingRight: '0px',
