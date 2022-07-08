@@ -3,14 +3,17 @@ import useWindowSize from '../lib/useWindowSize';
 
 const Container = styled.div`
   border-radius: 10px;
-  max-width: 280px;
-  min-width: 200px;
+  margin-top: 10px;
+  width: 95%;
+  /* max-width: 280px; */
+  /* min-width: 200px;
   margin-bottom: 10px;
   margin-right: 10px;
+  margin-top: 10px;
   @media (min-width: 1201px) {
     margin-right: -10px;
     margin-bottom: 10px;
-  }
+  } */
 `;
 
 const PriceText = styled.p`

@@ -1,25 +1,28 @@
-import styled from "styled-components";
-import { MdOpenWith, MdDelete, MdCameraAlt } from "react-icons/md";
-// import ThreeCanvas from "./ThreeCanvas";
-import ThreeCanvas from "./ThreeCanvas_glass";
+import React from 'react';
+import styled from 'styled-components';
+import { MdOpenWith, MdDelete, MdCameraAlt } from 'react-icons/md';
+import './custom.css';
+import ThreeCanvas from './ThreeCanvas_glass';
+import { Typography } from '@material-ui/core';
+
 const Frame = styled.div`
   width: 100%;
   max-width: 560px;
-
-  border: 5px solid white;
+  border: none;
   position: relative;
-  border-radius: 15px;
+  border-radius: 8%;
   margin-left: auto;
   margin-right: auto;
   overflow: hidden;
+  border-top: 4px solid #fc5680;
 `;
 
 const BottomOverlay = styled.div`
-  background-color: black;
+  background-color: white;
   /* position: absolute; */
   width: 100%;
   z-index: 100;
-  height: 100px;
+  height: 75px;
   color: white;
   text-align: center;
   font-size: 14px;
@@ -37,19 +40,18 @@ const Button = styled.div`
   &:hover {
     color: #ccc;
   }
-  margin-top: 15px;
 `;
 
 const CameraButton = styled.div`
   background: #007cc5;
-  border: 2px solid #ffffff;
+  border: none;
   box-sizing: border-box;
   box-shadow: 0px 16px 32px rgba(79, 79, 79, 0.25);
 
   cursor: pointer;
 
-  width: 100px;
-  height: 100px;
+  width: 50px;
+  height: 50px;
   border-radius: 100px;
 
   transform: translateY(-50%);
@@ -58,40 +60,60 @@ const CameraButton = styled.div`
   &:hover {
     filter: brightness(0.8);
   }
+  position: absolute;
+  left: 50%;
+  top: -25px;
+  transform: translateX(-50%);
 `;
 
 export default function CameraFrame({ setScreenshots }) {
-  const [ThreeCanvasComponent, saveScreenshot] = ThreeCanvas();
+  const [ThreeCanvasComponent, saveScreenshot, removeFrame] = ThreeCanvas();
 
   const newScreenshot = async () => {
     const screenshot = await saveScreenshot();
     setScreenshots((old) => [...old, screenshot]);
   };
 
+  const remove = () => {
+    removeFrame();
+  };
+
   return (
-    <Frame className="shadow-sm col" id="cam-frame">
+    <Frame className="shadow-sm col p-0 m-0" id="cam-frame">
       {ThreeCanvasComponent}
 
       <div className="row">
         <BottomOverlay>
-          <div className="row align-items-center w-100">
-            <Button className="col">
+          <div className="row align-items-center w-100 position-relative justify-content-between">
+            <Button
+              className="col-4 d-flex flex-column align-items-center"
+              style={{ color: 'black' }}
+            >
               <div className="row">
-                <MdOpenWith size="25px" />
+                <MdOpenWith color="#007cc5" size="25px" />
               </div>
               <div className="row">
-                <p>Frame position</p>
+                <Typography variant="body2">Frame position</Typography>
               </div>
             </Button>
-            <CameraButton className="row align-items-center" onClick={newScreenshot}>
-              <MdCameraAlt size="50px" color="white" />
+            <CameraButton
+              className="row align-items-center d-flex flex-column justify-content-center"
+              onClick={newScreenshot}
+            >
+              <div style={{ marginLeft: '-24px' }}>
+                <MdCameraAlt size="25px" color="white" />
+              </div>
             </CameraButton>
-            <Button className="col">
+            <Button
+              onClick={remove}
+              className="col-4 d-flex flex-column align-items-center"
+              style={{ color: 'black' }}
+            >
               <div className="row">
-                <MdDelete size="25px" />
+                <MdDelete color="red" size="25px" />
               </div>
               <div className="row">
-                <p>Remove frame</p>
+                <Typography variant="body2">Remove frame</Typography>
               </div>
             </Button>
           </div>
