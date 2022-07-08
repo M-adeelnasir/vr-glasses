@@ -14,12 +14,8 @@ const Auth = () => {
     return (
         <>
             {isAuth === "true" ? <App /> : <Signin />}
-            // <App />
+            {/* <App /> */}
         </>
-        // <Routes>
-        //     <Route exact path="/" element={<Signin />} />
-        //     <Route path="/home" element={<ProtectedRoute isAuth={isAuth} Component={App} />} />
-        // </Routes>
     )
 
 };
