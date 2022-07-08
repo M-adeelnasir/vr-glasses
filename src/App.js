@@ -6,6 +6,8 @@ import CameraFrame from "./components/CameraFrame";
 import ModelStore from "./stores/ModelStore";
 import useWindowSize from "./lib/useWindowSize";
 import backgroundImage from "./assets/images/468 1.png";
+import { Typography } from "@material-ui/core";
+import img from "./assets/previews/ray glasses test 13 black.png";
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -15,34 +17,46 @@ const GlobalStyle = createGlobalStyle`
     height: 100%;
   }
 
+  .row {
+    margin: 0 !important;
+  }
+
+  .ml-40 {
+    margin-left: -40px !important;
+  }
+
+  .m-40 {
+    margin-left: 40px !important;
+  }
+
   canvas {
     border-radius: 10px;
   }
-`;
 
+  .active {
+    border: 1px solid #007cc5
+  }
+`;
 const Header = styled.h1`
   font-weight: bold;
   font-size: 48px;
   color: #373737;
   text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   text-align: center;
-
   @media (max-width: 1200px) {
     font-size: 2em;
   }
 `;
-
 const ScrollContainer = styled.div`
   max-height: 80vh;
   overflow: scroll;
-
+  width: 100%;
+  padding: 12px;
   @media (max-width: 1200px) {
     height: auto;
-
     display: flex;
     flex-direction: row;
   }
-
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
@@ -76,7 +90,17 @@ function App() {
   const currentModelIndex = ModelStore.useState((state) => state.currentModelIndex);
 
   const windowSize = useWindowSize();
+  const [current, setCurrent] = useState(0);
 
+  const [preview, setPreview] = useState(
+    {
+      img: img,
+      price: "$99",
+      description: `Ray-Ban Aviator Gradient sunglasses encompass the teardrop shape that started it all.
+      Originally designed for U.S. aviators, the Aviator Sunglasses design has become an icon.
+      The gradient lenses are nicely toned and give a cool effect to what is considered the sunglass that shaped entire cult movements.`
+    }
+  );
   const getNameFromImg = (img) => {
     const a = img.split("/");
     return a[a.length - 1].split(".")[0];
@@ -85,40 +109,67 @@ function App() {
   return (
     <>
       <GlobalStyle />
-      <div className="App">
-        <div className=" mt-3">
-          <div className="row">
-            <Header>
-              Find your style, <span style={{ color: "red" }}>Try it on!</span>
-            </Header>
+      <div className="App" style={{ marginLeft: '50px', marginRight: '50px' }}>
+        <div className="mt-4">
+          <div className="" style={{ display: 'flex', justifyContent: 'space-around' }}>
+            <Typography variant="h7" className="">
+              Glasses
+            </Typography>
+            <Typography variant="h6" className="font-weight-bold">
+              Find your style, Try it now!
+            </Typography>
+            <Typography variant="h7" className="">
+              Pictures
+            </Typography>
           </div>
-          <div className="row mt-2 row-cols-xl-3 row-cols-1">
-            <div className="row">
-              <ScrollContainer
-                className={windowSize.width >= 1200 ? "row justify-content-end" : ""}
-              >
-                {glassesPreviews.map((img, index) => (
+          <div className="row">
+            <div className="col-9 p-0 m-0">
+              <div className="row w-100">
+
+                <div
+                  className="col-4 p-0 m-0 m-40"
+                  style={{
+                    minHeight: "530px",
+                    borderTop: "4px solid #44b5c2",
+                    borderRadius: "8%",
+                    background: "white",
+                  }}
+                >
                   <GlassesCard
-                    key={index}
-                    image={img}
-                    name={"Ray-Ban Sunglasses black"}
-                    price="$99"
-                    description="Three's a crowd. And who doesn't enjoy a little golden ear party? One wasn't enough, two needed a boost, but three felt right. Throw your hair up with this triple threat ear stack, made from our 100% sustainable recycled gold, in Vermeil only."
-                    style={currentModelIndex === index ? { border: "1px solid blue" } : null}
+                    image={preview?.img ?? ''}
+                    name={preview?.img ? getNameFromImg(preview.img) : ''}
+                    price={preview?.price ?? ''}
+                    description={preview?.description ?? ''}
                     onClick={() => {
                       ModelStore.update((state) => {
-                        state.currentModelIndex = index;
+                        state.currentModelIndex = 0;
                       });
+                      setCurrent(0)
                     }}
                   />
-                ))}
-              </ScrollContainer>
+                </div>
+                <div
+                  className="col-8 p-0 m-0 ml-40"
+                  style={{
+                    justifyContent: "center",
+                    display: "flex",
+                    minHeight: "530px",
+                  }}
+                >
+                  <CameraFrame setScreenshots={setScreenshots} />
+                </div>
+              </div>
             </div>
-            <div className="col" style={{ minHeight: "80vh" }}>
-              <CameraFrame setScreenshots={setScreenshots} />
-            </div>
-            <div className="col">
-              <div className="row">
+            <div
+              className="col-3 p-0 m-0 ml-40"
+              style={{
+                borderTop: "4px solid #44b5c2",
+                borderRadius: "8%",
+                padding: "8px !important",
+                background: "white",
+              }}
+            >
+              <div className="row justify-content-center">
                 <ScrollContainer>
                   {screenshots.map((screenshot, index) => (
                     <ImageCard
