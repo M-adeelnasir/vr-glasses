@@ -8,12 +8,12 @@ import { BrowserRouter as Router, Routes, Route, useParams } from "react-router-
 
 const Auth = () => {
     var isAuth = localStorage.getItem("isAuth");
-    // if (isAuth !== null && isAuth !== undefined && isAuth !== "") {
-    //     isAuth = true;
-    // }
+    if (isAuth !== null && isAuth !== undefined && isAuth !== "") {
+        isAuth = true;
+    }
     return (
         <>
-            {/* {isAuth === "true" ? <App /> : <Signin />} */}
+            {isAuth === "true" ? <App /> : <Signin />}
             <App />
         </>
         // <Routes>
